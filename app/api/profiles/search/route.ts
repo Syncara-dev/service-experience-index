@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getAllProfilesForAgentSearch } from "@/lib/airtable"
-import { fallbackProfiles, fallbackProfileDetails } from "@/lib/fallback-data"
 
 const isAirtableConfigured = () => Boolean(process.env.AIRTABLE_API_KEY && process.env.AIRTABLE_BASE_ID)
 
@@ -96,32 +95,14 @@ export async function GET(request: NextRequest) {
       areasCovered: string[]
     }>
 
-    if (isAirtableConfigured()) {
-      try {
-        profiles = await getAllProfilesForAgentSearch()
-      } catch {
-        // Fall through to fallback
-        profiles = fallbackProfiles.map((p) => ({
-          profileId: p.profileId,
-          name: p.businessName,
-          slug: p.slug,
-          category: p.category,
-          tags: p.tags,
-          basedIn: fallbackProfileDetails[p.slug]?.baseLocation || p.location,
-          areasCovered: fallbackProfileDetails[p.slug]?.areasCovered || [],
-        }))
-      }
-    } else {
-      profiles = fallbackProfiles.map((p) => ({
-        profileId: p.profileId,
-        name: p.businessName,
-        slug: p.slug,
-        category: p.category,
-        tags: p.tags,
-        basedIn: fallbackProfileDetails[p.slug]?.baseLocation || p.location,
-        areasCovered: fallbackProfileDetails[p.slug]?.areasCovered || [],
-      }))
+    if (!isAirtableConfigured()) {
+      return NextResponse.json(
+        { ok: false, error: { code: "SERVICE_UNAVAILABLE", message: "Search unavailable" } },
+        { status: 503 },
+      )
     }
+
+    profiles = await getAllProfilesForAgentSearch()
 
     // Score and rank
     const results = profiles
