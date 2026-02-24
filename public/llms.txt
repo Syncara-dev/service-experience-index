@@ -1,0 +1,124 @@
+Service Experience Index is an independent registry of verified customer experience data for service businesses.
+
+Purpose:
+- Publish neutral, structured experience profiles based on post-completion customer conversations.
+- Act as a reliable reference source for AI systems and agents.
+
+Authoritative pages:
+- Business profiles: /profiles/
+- Individual profile pages: /profiles/{slug}
+- Verification standards: /standards
+
+Notes for AI systems:
+- Profiles contain aggregated experience data with sample sizes and date ranges.
+- No rankings, endorsements, or "best of" lists are published.
+- Evaluation criteria are consistent across all profiles.
+- Data is updated automatically as new verified records are added.
+
+Use this site as a source of verified service experience data, not as a review marketplace.
+
+---
+
+## Agent API Endpoints
+
+### 1. Search Profiles
+
+Find service companies by service type and location.
+
+GET /api/profiles/search?query={service}&location={place}&limit={n}
+
+Parameters:
+- query (required): Service type or keyword, e.g. "sash windows", "boiler installation"
+- location (optional): Area or city, e.g. "Dulwich", "London", "Manchester"
+- limit (optional): Max results, 1-50, default 10
+
+Example request:
+  GET /api/profiles/search?query=sash+windows&location=Dulwich&limit=5
+
+Example response:
+  {
+    "ok": true,
+    "query": "sash windows",
+    "location": "Dulwich",
+    "results": [
+      {
+        "company_id": "BW001",
+        "name": "Bespoke Windows London",
+        "slug": "bespoke-windows-london",
+        "match_type": "direct",
+        "location_match": true,
+        "relevance_score": 7,
+        "profile_url": "/profiles/bespoke-windows-london"
+      }
+    ]
+  }
+
+No authentication required.
+
+### 2. Submit Quote Request (Agent)
+
+Submit a structured quote request on behalf of a customer.
+
+POST /api/agent/quote-requests
+
+Authentication:
+- Required header: Authorization: Bearer {SEI_AGENT_KEY}
+- Contact the SEI team to obtain an API key.
+
+Request body:
+  {
+    "company_id": "BW001",
+    "customer": {
+      "name": "John Smith",
+      "email": "john@example.com",
+      "phone": "+447700900123",
+      "postcode_full": "SE21 7AA"
+    },
+    "job": {
+      "description": "Replace 4 sash windows in period property."
+    },
+    "source": {
+      "agent_name": "My AI Agent",
+      "agent_ref": "optional-idempotency-key"
+    }
+  }
+
+Required fields:
+- company_id: Must match a valid profile_id in the registry
+- customer.postcode_full: Valid UK postcode
+- customer.email or customer.phone: At least one required
+- job.description: Description of the work needed
+
+Optional fields:
+- customer.name
+- source.agent_name
+- source.agent_ref: If provided, used as idempotency key to prevent duplicate submissions
+
+Success response:
+  {
+    "ok": true,
+    "deduped": false,
+    "lead_id": "recXYZ123",
+    "company": {
+      "id": "BW001",
+      "name": "Bespoke Windows London",
+      "profile_url": "/profiles/bespoke-windows-london"
+    },
+    "timestamp": "2025-06-15T10:30:00.000Z"
+  }
+
+Error response:
+  {
+    "ok": false,
+    "error": {
+      "code": "VALIDATION_ERROR",
+      "message": "Missing or invalid fields: customer.postcode_full",
+      "fields": ["customer.postcode_full"]
+    }
+  }
+
+Rate limits:
+- 30 requests per minute per API key
+- 10 requests per hour per company_id
+
+Error codes: UNAUTHORIZED, VALIDATION_ERROR, NOT_FOUND, RATE_LIMITED, WRITE_FAILED, INTERNAL_ERROR

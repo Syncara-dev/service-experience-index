@@ -1,0 +1,20 @@
+[
+  "profile_id",
+  "name",
+  "slug",
+  "status",
+  "category",
+  "framework_type",
+  "based_in",
+  "areas_covered",
+  "website_url",
+  "last_updated_at",
+  "sample_size",
+  "overall_score_avg",
+  "count_8_plus",
+  "pct_8_plus",
+  "count_recommended",
+  "recommendation_rate",
+  "Public Records",
+  "Tags"
+]
