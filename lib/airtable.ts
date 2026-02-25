@@ -31,10 +31,10 @@ interface PublicProfileFields {
   count_recommended?: number
   recommendation_rate?: number
   Tags?: string | string[]  // multi-select or linked
-  // Fields not yet in Airtable — optional for future use
+  "Company Logo"?: Array<{ url: string; filename?: string; id?: string }>
   summary?: string
   short_description?: string
-  logo_url?: string
+  logo_url?: string           // legacy text field — superseded by "Company Logo" attachment
   date_range_start?: string
   date_range_end?: string
   score_product?: number
@@ -263,7 +263,7 @@ function transformProfile(record: AirtableRecord<PublicProfileFields>): Profile 
       topThemes: f.top_themes?.split(",").map((t) => t.trim()) || [],
     },
     customerVoice: parseQuotes(f.public_quotes || ""),
-    logoUrl: f.logo_url,
+    logoUrl: f["Company Logo"]?.[0]?.url ?? f.logo_url,
     website: f.website_url,
     shortDescription: f.short_description,
     services: f.services?.split(",").map((s) => s.trim()) || [],
@@ -298,7 +298,7 @@ function transformProfileSummary(record: AirtableRecord<PublicProfileFields>): P
     overallScore: f.overall_score_avg || 0,
     sampleSize: f.sample_size || 0,
     dateRange,
-    logoUrl: f.logo_url,
+    logoUrl: f["Company Logo"]?.[0]?.url ?? f.logo_url,
     shortDescription: f.short_description || (f.summary ? f.summary.slice(0, 120) + "..." : ""),
     website: f.website_url,
   }
