@@ -31,9 +31,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: "Profile Not Found | Service Experience Index" }
   }
 
+  const title = `${profile.businessName} – Verified Experience Profile`
+  const description = `Verified customer experience data for ${profile.businessName}. Overall score: ${profile.overallScore}/10 based on ${profile.sampleSize} post-completion conversations.`
+  const url = `/profiles/${slug}`
+
   return {
-    title: `${profile.businessName} – Verified Experience Profile | Service Experience Index`,
-    description: `Verified customer experience data for ${profile.businessName}. Overall score: ${profile.overallScore}/10 based on ${profile.sampleSize} post-completion conversations.`,
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      url,
+      type: "profile",
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
   }
 }
 

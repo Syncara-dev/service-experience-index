@@ -1,5 +1,19 @@
+import type { Metadata } from "next"
 import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
+
+export const metadata: Metadata = {
+  title: "Verification Standards",
+  description:
+    "The principles and commitments that govern how customer experience data is collected, verified, and published by the Service Experience Index.",
+  alternates: { canonical: "/standards" },
+  openGraph: {
+    title: "Verification Standards | Service Experience Index",
+    description:
+      "The principles and commitments that govern how customer experience data is collected, verified, and published by the Service Experience Index.",
+    url: "/standards",
+  },
+}
 
 export default function StandardsPage() {
   return (

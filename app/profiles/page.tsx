@@ -7,9 +7,22 @@ import { getAllProfiles, getAllCategories } from "@/lib/data"
 export const revalidate = 3600 // re-fetch from Airtable every hour
 
 export const metadata: Metadata = {
-  title: "Verified Business Profiles | Service Experience Index",
+  title: "Verified Business Profiles",
   description:
     "Browse verified customer experience profiles for service businesses. Independent, structured data from post-completion conversations.",
+  alternates: { canonical: "/profiles" },
+  openGraph: {
+    title: "Verified Business Profiles | Service Experience Index",
+    description:
+      "Browse verified customer experience profiles for service businesses. Independent, structured data from post-completion conversations.",
+    url: "/profiles",
+  },
+  twitter: {
+    card: "summary",
+    title: "Verified Business Profiles | Service Experience Index",
+    description:
+      "Browse verified customer experience profiles for service businesses. Independent, structured data from post-completion conversations.",
+  },
 }
 
 export default async function ProfilesPage() {
