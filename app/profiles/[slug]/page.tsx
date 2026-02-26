@@ -12,6 +12,8 @@ import { ProfileJsonLd } from "@/components/profile-json-ld"
 import { MarketPresence } from "@/components/market-presence"
 import { getProfileBySlug, getRecordsForProfile, getAllProfileSlugs } from "@/lib/data"
 
+export const revalidate = 3600 // re-fetch from Airtable every hour
+
 interface PageProps {
   params: Promise<{ slug: string }>
 }

@@ -4,6 +4,8 @@ import { SiteFooter } from "@/components/site-footer"
 import { ProfilesSearch } from "@/components/profiles-search"
 import { getAllProfiles, getAllCategories } from "@/lib/data"
 
+export const revalidate = 3600 // re-fetch from Airtable every hour
+
 export const metadata: Metadata = {
   title: "Verified Business Profiles | Service Experience Index",
   description:

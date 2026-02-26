@@ -177,7 +177,7 @@ async function fetchAirtable<T>(table: string, params: Record<string, string> = 
       Authorization: `Bearer ${AIRTABLE_API_KEY}`,
       "Content-Type": "application/json",
     },
-    next: { tags: ["airtable", `table-${table}`] },
+    next: { revalidate: 3600, tags: ["airtable", `table-${table}`] },
   })
 
   if (!response.ok) {
@@ -226,6 +226,13 @@ function parseQuotes(quotesField: string): { quote: string; name: string }[] {
   return []
 }
 
+function normalizeUrl(url?: string): string | undefined {
+  if (!url) return undefined
+  const trimmed = url.trim().replace(/^["']+|["']+$/g, "") // strip surrounding quotes
+  if (!trimmed) return undefined
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+}
+
 function parseTags(tags?: string | string[]): string[] {
   if (!tags) return []
   if (Array.isArray(tags)) return tags
@@ -264,7 +271,7 @@ function transformProfile(record: AirtableRecord<PublicProfileFields>): Profile 
     },
     customerVoice: parseQuotes(f.public_quotes || ""),
     logoUrl: f["Company Logo"]?.[0]?.url ?? f.logo_url,
-    website: f.website_url,
+    website: normalizeUrl(f.website_url),
     shortDescription: f.short_description,
     services: f.services?.split(",").map((s) => s.trim()) || [],
     baseLocation: f.based_in,
@@ -300,7 +307,7 @@ function transformProfileSummary(record: AirtableRecord<PublicProfileFields>): P
     dateRange,
     logoUrl: f["Company Logo"]?.[0]?.url ?? f.logo_url,
     shortDescription: f.short_description || (f.summary ? f.summary.slice(0, 120) + "..." : ""),
-    website: f.website_url,
+    website: normalizeUrl(f.website_url),
   }
 }
 
