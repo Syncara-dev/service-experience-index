@@ -29,6 +29,9 @@ export const metadata: Metadata = {
     title: "Service Experience Index",
     description: siteDescription,
   },
+  verification: {
+    google: "wB6F6MOWvLQXM7uxqU6iAVUb9PFtvoXBrVqs2zl0Td0",
+  },
   icons: {
     icon: [
       {
