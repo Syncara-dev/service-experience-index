@@ -613,3 +613,44 @@ export async function getAllProfilesForAgentSearch(): Promise<
     areasCovered: parseTags(r.fields.areas_covered),
   }))
 }
+// --- DYNAMIC ROUTING FUNCTIONS (TRADE + AREA) ---
+
+export async function getProfilesForArea(
+  areaSlug: string,
+  categorySlug?: string
+): Promise<ProfileSummary[]> {
+  // Fetch raw records so we can access areas_covered before transforming
+  const records = await fetchAirtable<PublicProfileFields>(PROFILES_TABLE)
+
+  const filteredRecords = records.filter((r) => {
+    const f = r.fields
+    
+    // 1. Check if the area matches either based_in or areas_covered
+    const basedIn = (f.based_in || "").toLowerCase()
+    const areasCovered = parseTags(f.areas_covered).map((a) => a.toLowerCase())
+    const searchArea = areaSlug.toLowerCase()
+    
+    const matchesArea = 
+      basedIn.includes(searchArea) || 
+      areasCovered.some((a) => a.includes(searchArea))
+
+    // 2. Check if the category (trade) matches, if a category was provided
+    const matchesCategory = categorySlug
+      ? (f.category || "").toLowerCase() === categorySlug.toLowerCase()
+      : true
+
+    // Only return records that match both location and trade
+    return matchesArea && matchesCategory
+  })
+
+  // Transform the filtered results into the ProfileSummary format the UI expects
+  return filteredRecords
+    .map(transformProfileSummary)
+    .sort((a, b) => a.businessName.localeCompare(b.businessName))
+}
+
+export async function getRecentRecordsForArea(areaSlug: string): Promise<ExperienceRecord[]> {
+  // Placeholder returning an empty array to satisfy the Next.js build requirement.
+  // We can implement actual area-based experience records later if needed.
+  return []
+}

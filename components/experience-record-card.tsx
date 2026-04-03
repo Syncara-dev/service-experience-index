@@ -2,6 +2,7 @@ interface ExperienceRecordProps {
   customerLabel: string
   date: string
   headline: string
+  projectType?: string
   overallScore: number
   summaryPublic: string
   sentiment: "positive" | "mixed" | "negative"
@@ -13,6 +14,7 @@ interface ExperienceRecordProps {
     likelihoodToRecommend: number
   }
   behaviouralNote?: string
+  customerNote?: string
   companyActionNote?: string
   companyActionNoteApproved?: boolean
   companyName?: string
@@ -53,16 +55,24 @@ function shouldShowCompanyActionNote(props: ExperienceRecordProps): boolean {
   return true
 }
 
+// Extract postcode from customerLabel (e.g. "Sarah (SW11)" -> "SW11")
+function extractPostcode(customerLabel: string): string | null {
+  const match = customerLabel.match(/\(([A-Z0-9]+)\)/)
+  return match ? match[1] : null
+}
+
 export function ExperienceRecordCard({
   customerLabel,
   date,
   headline,
+  projectType,
   overallScore,
   summaryPublic,
   sentiment,
   tags,
   ratings,
   behaviouralNote,
+  customerNote,
   companyActionNote,
   companyActionNoteApproved,
   companyName,
@@ -74,18 +84,17 @@ export function ExperienceRecordCard({
   return (
     <article className="border border-border rounded-lg overflow-hidden bg-card">
       <div className="px-5 py-4">
-        {/* Top row: score badge + headline */}
-        <div className="flex items-start gap-3 mb-3">
+        {/* Score badge */}
+        <div className="mb-3">
           <div
-            className={`flex-shrink-0 w-10 h-10 rounded-md flex items-center justify-center font-medium text-sm tabular-nums ${scoreColor}`}
+            className={`inline-flex w-10 h-10 rounded-md items-center justify-center font-medium text-sm tabular-nums ${scoreColor}`}
           >
             {overallScore.toFixed(1)}
           </div>
-          <h3 className="text-base font-medium text-foreground leading-snug pt-1">{headline}</h3>
         </div>
 
         {/* Meta line: customer label + date + sentiment */}
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-3">
           <span className="text-xs text-muted-foreground">{customerLabel}</span>
           <span className="text-muted-foreground">·</span>
           <time dateTime={date} className="text-xs text-muted-foreground">
@@ -97,17 +106,38 @@ export function ExperienceRecordCard({
           </span>
         </div>
 
+        {/* Project Details */}
+        {(() => {
+          const postcode = extractPostcode(customerLabel)
+          const hasDetails = projectType || postcode
+          if (!hasDetails) return null
+          
+          const detailParts: string[] = []
+          if (projectType) detailParts.push(projectType)
+          if (postcode) detailParts.push(postcode)
+          
+          return (
+            <div className="mb-4">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">
+                Project Details
+              </p>
+              <p className="text-sm text-foreground">{detailParts.join(" · ")}</p>
+            </div>
+          )
+        })()}
+
         {/* Customer summary */}
         <p className="text-sm text-foreground leading-relaxed mb-4">{summaryPublic}</p>
 
-        {/* Tags */}
-        {tags && tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            {tags.map((tag) => (
-              <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                {tag}
-              </span>
-            ))}
+        {/* Customer Note */}
+        {customerNote && customerNote.trim() && (
+          <div className="mb-4">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70 mb-1">
+              Customer note
+            </p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {customerNote}
+            </p>
           </div>
         )}
 
@@ -131,11 +161,6 @@ export function ExperienceRecordCard({
           </div>
         </div>
 
-        {/* Behavioural Note */}
-        {behaviouralNote && (
-          <p className="mt-4 text-sm text-muted-foreground italic">Customer noted: {behaviouralNote}</p>
-        )}
-
         {/* Company action note (conditional) */}
         {showActionNote && (
           <div className="mt-4 pt-4 border-t border-border">
@@ -151,10 +176,6 @@ export function ExperienceRecordCard({
           </div>
         )}
 
-        {/* Verification line */}
-        <p className="mt-4 pt-3 border-t border-border text-xs text-muted-foreground">
-          Verified customer · Record collected post-completion
-        </p>
       </div>
     </article>
   )

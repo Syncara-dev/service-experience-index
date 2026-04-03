@@ -15,6 +15,12 @@ export function SiteHeader() {
             <Link href="/profiles" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
               Profiles
             </Link>
+            <Link href="/trades" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+              Trades
+            </Link>
+            <Link href="/locations" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+              Locations
+            </Link>
             <Link href="/standards" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
               Verification Standards
             </Link>
