@@ -1,6 +1,19 @@
-// Airtable data fetching utilities
-// Uses environment variables for configuration
+// lib/airtable.ts
 
+/**
+ * AIRTABLE CONFIGURATION
+ */
+const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY
+const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID
+const PROFILES_TABLE = process.env.AIRTABLE_PUBLIC_PROFILES_TABLE || "Public Profiles"
+const RECORDS_TABLE = process.env.AIRTABLE_PUBLIC_RECORDS_TABLE || "Public Records"
+const DIMENSION_SCORES_TABLE = "Record Dimension Scores"
+
+const BASE_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}`
+
+/**
+ * TYPE DEFINITIONS
+ */
 interface AirtableRecord<T> {
   id: string
   fields: T
@@ -12,15 +25,14 @@ interface AirtableResponse<T> {
   offset?: string
 }
 
-// Raw field types from Airtable — names match actual Airtable column names exactly
 interface PublicProfileFields {
   profile_id: string
-  name: string              // business name
+  name: string               
   slug: string
-  status?: string           // e.g. "Active", "Draft"
+  status?: string            
   category: string
-  framework_type?: string   // e.g. "trades_v1"
-  based_in?: string         // primary location
+  framework_type?: string    
+  based_in?: string          
   areas_covered?: string | string[]
   website_url?: string
   last_updated_at?: string
@@ -30,11 +42,11 @@ interface PublicProfileFields {
   pct_8_plus?: number
   count_recommended?: number
   recommendation_rate?: number
-  Tags?: string | string[]  // multi-select or linked
+  Tags?: string | string[]   
   "Company Logo"?: Array<{ url: string; filename?: string; id?: string }>
   summary?: string
   short_description?: string
-  logo_url?: string           // legacy text field — superseded by "Company Logo" attachment
+  logo_url?: string          
   date_range_start?: string
   date_range_end?: string
   score_product?: number
@@ -43,7 +55,7 @@ interface PublicProfileFields {
   score_recommend?: number
   top_themes?: string
   public_quotes?: string
-  services?: string
+  services_offered?: string | string[]
   platform_1_name?: string
   platform_1_review_count?: number
   platform_1_url?: string
@@ -54,31 +66,32 @@ interface PublicProfileFields {
 
 interface PublicRecordFields {
   record_id?: string
-  profile?: string[]           // linked record IDs to Public Profiles
+  profile?: string[]           
   customer_label?: string
   experience_date?: string
   overall_score?: number
-  recommended?: boolean | number  // Airtable returns 1/0 for checkboxes
+  recommended?: boolean | number
   record_summary_public?: string
-  publish_status?: string      // e.g. "Published"
+  publish_status?: string
   experience_month?: string
   flag_8_plus?: boolean | number
   flag_recommended?: boolean | number
+  experience_summary_public?: string
   company_action_note_status?: string
   company_action_note_over_limit?: boolean
+  customer_note?: string
   syncara_record_id?: string
 }
 
 interface DimensionScoreFields {
-  rds_id?: string              // format: "{recordId}::{dimensionName}" e.g. "recXXX::process"
-  record?: string[]            // linked record IDs to Public Records
-  dimension?: string[]         // linked record IDs to a Dimensions table (not the name)
+  rds_id?: string              
+  record?: string[]            
+  dimension?: string[]         
   score?: number
-  profile?: string[]           // linked record IDs to Public Profiles
+  profile?: string[]           
   framework?: string[]
 }
 
-// Transformed types for the application
 export interface Profile {
   profileId: string
   slug: string
@@ -134,9 +147,9 @@ export interface ProfileSummary {
 }
 
 export interface ExperienceRecord {
-  customerLabel: string // e.g. "Sarah (SW11)"
-  date: string // ISO date
-  headline: string // short title
+  customerLabel: string
+  date: string
+  headline: string
   overallScore: number
   summaryPublic: string
   sentiment: "positive" | "mixed" | "negative"
@@ -150,27 +163,20 @@ export interface ExperienceRecord {
   behaviouralNote?: string
   companyActionNote?: string
   companyActionNoteApproved?: boolean
+  customerNote?: string
 }
 
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID
-const PROFILES_TABLE = process.env.AIRTABLE_PUBLIC_PROFILES_TABLE || "Public Profiles"
-const RECORDS_TABLE = process.env.AIRTABLE_PUBLIC_RECORDS_TABLE || "Public Records"
-const DIMENSION_SCORES_TABLE = "Record Dimension Scores"
-
-
-const BASE_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}`
-
+/**
+ * HELPER FUNCTIONS
+ */
 async function fetchAirtable<T>(table: string, params: Record<string, string> = {}): Promise<AirtableRecord<T>[]> {
   if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
-    console.warn("[v0] Airtable not configured, returning empty results")
+    console.warn("[Airtable] API Keys missing")
     return []
   }
 
   const url = new URL(`${BASE_URL}/${encodeURIComponent(table)}`)
-  Object.entries(params).forEach(([key, value]) => {
-    url.searchParams.set(key, value)
-  })
+  Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value))
 
   const response = await fetch(url.toString(), {
     headers: {
@@ -182,12 +188,12 @@ async function fetchAirtable<T>(table: string, params: Record<string, string> = 
 
   if (!response.ok) {
     const errorBody = await response.text()
-    console.error(`[v0] Airtable fetch failed: ${response.status}`, errorBody)
-    throw new Error(`Airtable fetch failed: ${response.status}`)
+    console.error(`[Airtable] Fetch failed (${response.status}):`, errorBody)
+    return []
   }
 
   const data: AirtableResponse<T> = await response.json()
-  return data.records
+  return data.records || []
 }
 
 function formatDateRange(start: string, end: string): string {
@@ -201,7 +207,6 @@ function formatDateRange(start: string, end: string): string {
 
 function parseQuotes(quotesField: string): { quote: string; name: string }[] {
   try {
-    // Try JSON array first
     const parsed = JSON.parse(quotesField)
     if (Array.isArray(parsed)) {
       return parsed.map((item) =>
@@ -211,15 +216,12 @@ function parseQuotes(quotesField: string): { quote: string; name: string }[] {
       )
     }
   } catch {
-    // Fall back to multi-line format
     return quotesField
       .split("\n")
       .filter((line) => line.trim())
       .map((line) => {
         const match = line.match(/^"?(.+?)"?\s*[-–—]\s*(.+)$/)
-        if (match) {
-          return { quote: match[1], name: match[2] }
-        }
+        if (match) return { quote: match[1], name: match[2] }
         return { quote: line.replace(/^["']|["']$/g, ""), name: "Verified Customer" }
       })
   }
@@ -228,25 +230,26 @@ function parseQuotes(quotesField: string): { quote: string; name: string }[] {
 
 function normalizeUrl(url?: string): string | undefined {
   if (!url) return undefined
-  const trimmed = url.trim().replace(/^["']+|["']+$/g, "") // strip surrounding quotes
+  const trimmed = url.trim().replace(/^["']+|["']+$/g, "")
   if (!trimmed) return undefined
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
 }
 
 function parseTags(tags?: string | string[]): string[] {
   if (!tags) return []
-  if (Array.isArray(tags)) return tags
-  return tags.split(",").map((t) => t.trim()).filter(Boolean)
+  if (Array.isArray(tags)) return tags.filter(Boolean)
+  return tags.split(/[,\n]/).map((t) => t.trim()).filter(Boolean)
 }
 
+/**
+ * TRANSFORMERS
+ */
 function transformProfile(record: AirtableRecord<PublicProfileFields>): Profile {
   const f = record.fields
-  const dateRange =
-    f.date_range_start && f.date_range_end
+  const dateRange = f.date_range_start && f.date_range_end
       ? formatDateRange(f.date_range_start, f.date_range_end)
-      : f.last_updated_at
-        ? new Date(f.last_updated_at).toLocaleDateString("en-GB", { month: "short", year: "numeric" })
-        : ""
+      : f.last_updated_at ? new Date(f.last_updated_at).toLocaleDateString("en-GB", { month: "short", year: "numeric" }) : ""
+
   return {
     profileId: f.profile_id,
     slug: f.slug,
@@ -267,13 +270,13 @@ function transformProfile(record: AirtableRecord<PublicProfileFields>): Profile 
     consistencySignals: {
       highScorePercentage: f.pct_8_plus || 0,
       recommendationRate: f.recommendation_rate || 0,
-      topThemes: f.top_themes?.split(",").map((t) => t.trim()) || [],
+      topThemes: f.top_themes?.split(",").map((t) => t.trim()).filter(Boolean) || [],
     },
     customerVoice: parseQuotes(f.public_quotes || ""),
     logoUrl: f["Company Logo"]?.[0]?.url ?? f.logo_url,
     website: normalizeUrl(f.website_url),
     shortDescription: f.short_description,
-    services: f.services?.split(",").map((s) => s.trim()) || [],
+    services: parseTags(f.services_offered),
     baseLocation: f.based_in,
     areasCovered: parseTags(f.areas_covered),
     externalPresence: {
@@ -289,12 +292,10 @@ function transformProfile(record: AirtableRecord<PublicProfileFields>): Profile 
 
 function transformProfileSummary(record: AirtableRecord<PublicProfileFields>): ProfileSummary {
   const f = record.fields
-  const dateRange =
-    f.date_range_start && f.date_range_end
+  const dateRange = f.date_range_start && f.date_range_end
       ? formatDateRange(f.date_range_start, f.date_range_end)
-      : f.last_updated_at
-        ? new Date(f.last_updated_at).toLocaleDateString("en-GB", { month: "short", year: "numeric" })
-        : ""
+      : f.last_updated_at ? new Date(f.last_updated_at).toLocaleDateString("en-GB", { month: "short", year: "numeric" }) : ""
+
   return {
     profileId: f.profile_id,
     slug: f.slug,
@@ -317,8 +318,8 @@ function transformRecord(
 ): ExperienceRecord {
   const f = record.fields
   const score = f.overall_score || 0
-  const sentiment: "positive" | "mixed" | "negative" =
-    score >= 8 ? "positive" : score >= 5 ? "mixed" : "negative"
+  const sentiment: "positive" | "mixed" | "negative" = score >= 8 ? "positive" : score >= 5 ? "mixed" : "negative"
+  
   return {
     customerLabel: f.customer_label || "Verified Customer",
     date: f.experience_date || f.experience_month || "",
@@ -336,10 +337,14 @@ function transformRecord(
     behaviouralNote: undefined,
     companyActionNote: f.company_action_note_status,
     companyActionNoteApproved: undefined,
+    customerNote: f.customer_note,
   }
 }
 
-// Public API functions
+/**
+ * PUBLIC API FUNCTIONS
+ */
+
 export async function getAllProfiles(): Promise<ProfileSummary[]> {
   const records = await fetchAirtable<PublicProfileFields>(PROFILES_TABLE)
   return records.map(transformProfileSummary).sort((a, b) => a.businessName.localeCompare(b.businessName))
@@ -354,22 +359,14 @@ export async function getProfileBySlug(slug: string): Promise<Profile | null> {
 
   const profileRecordId = records[0].id
 
-  // Fetch dimension scores and public records in parallel (no Airtable filter — JS-side filter below)
-  // Airtable's ARRAYJOIN on linked fields returns display values, not record IDs, so FIND() fails
   const [allDimensionScores, allPublicRecords] = await Promise.all([
     fetchAirtable<DimensionScoreFields>(DIMENSION_SCORES_TABLE),
     fetchAirtable<PublicRecordFields>(RECORDS_TABLE),
   ])
 
-  const dimensionScoreRecords = allDimensionScores.filter((ds) =>
-    ds.fields.profile?.includes(profileRecordId),
-  )
-  const publicRecords = allPublicRecords.filter((r) =>
-    r.fields.profile?.includes(profileRecordId),
-  )
+  const dimensionScoreRecords = allDimensionScores.filter((ds) => ds.fields.profile?.includes(profileRecordId))
+  const publicRecords = allPublicRecords.filter((r) => r.fields.profile?.includes(profileRecordId))
 
-  // Accumulate totals per dimension, then average
-  // Dimension name is extracted from rds_id: "{recordId}::{dimensionName}"
   const totals: Record<string, { sum: number; count: number }> = {}
   for (const ds of dimensionScoreRecords) {
     const dim = ds.fields.rds_id?.split("::")[1]
@@ -381,17 +378,13 @@ export async function getProfileBySlug(slug: string): Promise<Profile | null> {
   }
   const avg = (dim: string) => (totals[dim] ? totals[dim].sum / totals[dim].count : 0)
 
-  // Compute all metrics from actual records
   const total = publicRecords.length
   const highScoreCount = publicRecords.filter((r) => (r.fields.overall_score || 0) >= 8).length
   const recommendedCount = publicRecords.filter((r) => !!r.fields.recommended).length
-  const overallScoreAvg =
-    total > 0
-      ? publicRecords.reduce((sum, r) => sum + (r.fields.overall_score || 0), 0) / total
-      : 0
+  const overallScoreAvg = total > 0 ? publicRecords.reduce((sum, r) => sum + (r.fields.overall_score || 0), 0) / total : 0
 
   const profile = transformProfile(records[0])
-  profile.overallScore = Math.round(overallScoreAvg * 10) / 10  // 1 decimal place
+  profile.overallScore = Math.round(overallScoreAvg * 10) / 10
   profile.sampleSize = total
   profile.scores = {
     productSatisfaction: avg("product"),
@@ -409,7 +402,6 @@ export async function getProfileBySlug(slug: string): Promise<Profile | null> {
 }
 
 export async function getRecordsForProfile(profileSlug: string): Promise<ExperienceRecord[]> {
-  // Linked records require filtering by Airtable record ID, not slug
   const profileRecords = await fetchAirtable<PublicProfileFields>(PROFILES_TABLE, {
     filterByFormula: `{slug} = "${profileSlug}"`,
     maxRecords: "1",
@@ -418,20 +410,14 @@ export async function getRecordsForProfile(profileSlug: string): Promise<Experie
 
   const profileRecordId = profileRecords[0].id
 
-  // Fetch all records and dimension scores in parallel, filter by profile ID in JS
-  // Airtable's ARRAYJOIN on linked fields returns display values, not record IDs, so FIND() fails
   const [allRecords, allDimensionScores] = await Promise.all([
     fetchAirtable<PublicRecordFields>(RECORDS_TABLE),
     fetchAirtable<DimensionScoreFields>(DIMENSION_SCORES_TABLE),
   ])
 
   const records = allRecords.filter((r) => r.fields.profile?.includes(profileRecordId))
-  const profileDimensionScores = allDimensionScores.filter((ds) =>
-    ds.fields.profile?.includes(profileRecordId),
-  )
+  const profileDimensionScores = allDimensionScores.filter((ds) => ds.fields.profile?.includes(profileRecordId))
 
-  // Build a map: publicRecordAirtableId -> { dimension -> score }
-  // Dimension name is extracted from rds_id: "{recordId}::{dimensionName}"
   const scoreMap = new Map<string, Record<string, number>>()
   for (const ds of profileDimensionScores) {
     const linkedRecordId = ds.fields.record?.[0]
@@ -457,7 +443,6 @@ export async function getAllProfileSlugs(): Promise<string[]> {
   return profiles.map((p) => p.slug)
 }
 
-// API-friendly versions (for JSON endpoints)
 export async function searchProfiles(params: {
   location?: string
   category?: string
@@ -482,29 +467,22 @@ export async function searchProfiles(params: {
   return profiles
 }
 
-// Write to Airtable (for UI quote requests)
 export async function createQuoteRequest(data: {
   profile_slug: string
   postcode: string
   service_type: string
   notes?: string
-  contact_method: string  // "email" | "phone"
+  contact_method: string
   contact_value: string
 }): Promise<boolean> {
-  if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
-    console.error("[v0] Airtable not configured")
-    return false
-  }
-
-  const jobDescription = [data.service_type, data.notes].filter(Boolean).join(" — ")
-
   const fields: Record<string, unknown> = {
     postcode_full: data.postcode,
-    job_description: jobDescription,
+    job_description: [data.service_type, data.notes].filter(Boolean).join(" — "),
     lead_status: "new",
     source: "website",
+    profile_slug: data.profile_slug,
   }
-  fields.profile = data.profile_slug
+  
   if (data.contact_method === "email") fields.customer_email = data.contact_value
   if (data.contact_method === "phone") fields.customer_phone = data.contact_value
 
@@ -517,19 +495,10 @@ export async function createQuoteRequest(data: {
     body: JSON.stringify({ records: [{ fields }] }),
   })
 
-  if (!response.ok) {
-    const errorBody = await response.text()
-    console.error(`[airtable] createQuoteRequest failed ${response.status}:`, errorBody)
-  }
   return response.ok
 }
 
-// Agent-facing: lookup profile Airtable record ID by profile_id
-export async function getProfileRecordByProfileId(
-  profileId: string,
-): Promise<{ recordId: string; name: string; slug: string } | null> {
-  if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) return null
-
+export async function getProfileRecordByProfileId(profileId: string): Promise<{ recordId: string; name: string; slug: string } | null> {
   const records = await fetchAirtable<PublicProfileFields>(PROFILES_TABLE, {
     filterByFormula: `{profile_id} = "${profileId}"`,
     maxRecords: "1",
@@ -543,7 +512,6 @@ export async function getProfileRecordByProfileId(
   }
 }
 
-// Agent-facing: create inbound lead with linked record
 export async function createAgentQuoteRequest(data: {
   profileRecordId: string
   customerName: string
@@ -553,10 +521,6 @@ export async function createAgentQuoteRequest(data: {
   jobDescription: string
   source: string
 }): Promise<{ ok: boolean; leadId?: string }> {
-  if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
-    return { ok: false }
-  }
-
   const fields: Record<string, unknown> = {
     profile: [data.profileRecordId],
     customer_name: data.customerName,
@@ -574,31 +538,15 @@ export async function createAgentQuoteRequest(data: {
       Authorization: `Bearer ${AIRTABLE_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      records: [{ fields }],
-    }),
+    body: JSON.stringify({ records: [{ fields }] }),
   })
 
   if (!response.ok) return { ok: false }
-
   const result = await response.json()
   return { ok: true, leadId: result.records?.[0]?.id }
 }
 
-// Agent-facing: get all non-draft profiles with tags for search
-export async function getAllProfilesForAgentSearch(): Promise<
-  Array<{
-    profileId: string
-    name: string
-    slug: string
-    category: string
-    tags: string[]
-    basedIn: string
-    areasCovered: string[]
-  }>
-> {
-  if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) return []
-
+export async function getAllProfilesForAgentSearch(): Promise<Array<{ profileId: string; name: string; slug: string; category: string; tags: string[]; basedIn: string; areasCovered: string[] }>> {
   const records = await fetchAirtable<PublicProfileFields>(PROFILES_TABLE, {
     filterByFormula: `{status} != "Draft"`,
   })
@@ -613,44 +561,25 @@ export async function getAllProfilesForAgentSearch(): Promise<
     areasCovered: parseTags(r.fields.areas_covered),
   }))
 }
-// --- DYNAMIC ROUTING FUNCTIONS (TRADE + AREA) ---
 
-export async function getProfilesForArea(
-  areaSlug: string,
-  categorySlug?: string
-): Promise<ProfileSummary[]> {
-  // Fetch raw records so we can access areas_covered before transforming
+export async function getProfilesForArea(areaSlug: string, categorySlug?: string): Promise<ProfileSummary[]> {
   const records = await fetchAirtable<PublicProfileFields>(PROFILES_TABLE)
 
   const filteredRecords = records.filter((r) => {
     const f = r.fields
-    
-    // 1. Check if the area matches either based_in or areas_covered
     const basedIn = (f.based_in || "").toLowerCase()
     const areasCovered = parseTags(f.areas_covered).map((a) => a.toLowerCase())
     const searchArea = areaSlug.toLowerCase()
     
-    const matchesArea = 
-      basedIn.includes(searchArea) || 
-      areasCovered.some((a) => a.includes(searchArea))
+    const matchesArea = basedIn.includes(searchArea) || areasCovered.some((a) => a.includes(searchArea))
+    const matchesCategory = categorySlug ? (f.category || "").toLowerCase() === categorySlug.toLowerCase() : true
 
-    // 2. Check if the category (trade) matches, if a category was provided
-    const matchesCategory = categorySlug
-      ? (f.category || "").toLowerCase() === categorySlug.toLowerCase()
-      : true
-
-    // Only return records that match both location and trade
     return matchesArea && matchesCategory
   })
 
-  // Transform the filtered results into the ProfileSummary format the UI expects
-  return filteredRecords
-    .map(transformProfileSummary)
-    .sort((a, b) => a.businessName.localeCompare(b.businessName))
+  return filteredRecords.map(transformProfileSummary).sort((a, b) => a.businessName.localeCompare(b.businessName))
 }
 
 export async function getRecentRecordsForArea(areaSlug: string): Promise<ExperienceRecord[]> {
-  // Placeholder returning an empty array to satisfy the Next.js build requirement.
-  // We can implement actual area-based experience records later if needed.
   return []
 }

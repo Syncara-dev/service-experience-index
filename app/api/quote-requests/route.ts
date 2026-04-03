@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // Validate required fields
-    const { profile_slug, postcode, service_type, notes, email, phone } = body
+    const { profile_slug, postcode, service_type, contact_method, contact_value, notes } = body
 
     if (!profile_slug || typeof profile_slug !== "string") {
       return NextResponse.json({ error: "profile_slug is required" }, { status: 400 })
@@ -48,8 +48,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "service_type is required" }, { status: 400 })
     }
 
-    if (!email && !phone) {
-      return NextResponse.json({ error: "Email or phone is required" }, { status: 400 })
+    if (!contact_method || !["email", "phone"].includes(contact_method)) {
+      return NextResponse.json({ error: "contact_method must be 'email' or 'phone'" }, { status: 400 })
+    }
+
+    if (!contact_value || typeof contact_value !== "string" || contact_value.length < 5) {
+      return NextResponse.json({ error: "Valid contact information is required" }, { status: 400 })
     }
 
     // Write to Airtable
@@ -57,8 +61,8 @@ export async function POST(request: NextRequest) {
       profile_slug,
       postcode,
       service_type,
-      contact_method: email ? "email" : "phone",
-      contact_value: email || phone,
+      contact_method,
+      contact_value,
       notes: notes || "",
     })
 

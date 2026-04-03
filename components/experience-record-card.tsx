@@ -51,6 +51,7 @@ function getScoreColor(score: number): string {
 function shouldShowCompanyActionNote(props: ExperienceRecordProps): boolean {
   const note = props.companyActionNote
   if (!note || note.trim().length === 0) return false
+  if (note.trim().toLowerCase() === "none") return false
   if (props.companyActionNoteApproved === false) return false
   return true
 }
@@ -131,12 +132,12 @@ export function ExperienceRecordCard({
 
         {/* Customer Note */}
         {customerNote && customerNote.trim() && (
-          <div className="mb-4">
+          <div className="mb-4 pb-4 border-b border-border">
             <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70 mb-1">
               Customer note
             </p>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              {customerNote}
+              &ldquo;{customerNote}&rdquo;
             </p>
           </div>
         )}

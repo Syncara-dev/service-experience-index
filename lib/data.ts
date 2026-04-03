@@ -14,50 +14,70 @@ import {
 
 import { getTradeConfig } from "./trades"
 
+/**
+ * Checks if the required Airtable environment variables are set.
+ * If not, the application will return empty data instead of crashing.
+ */
+const isAirtableConfigured = () => Boolean(process.env.AIRTABLE_API_KEY && process.env.AIRTABLE_BASE_ID)
+
+// --- CORE PROFILE DATA ---
+
 export async function getAllProfiles(): Promise<ProfileSummary[]> {
-  try {
-    return await airtableGetAllProfiles()
-  } catch (error) {
-    console.error("Airtable fetch failed:", error)
-    return []
+  if (isAirtableConfigured()) {
+    try {
+      return await airtableGetAllProfiles()
+    } catch (error) {
+      console.error("[SEI Data] Airtable fetch failed:", error)
+    }
   }
+  return [] // Strictly no fallbacks
 }
 
 export async function getProfileBySlug(slug: string): Promise<Profile | null> {
-  try {
-    return await airtableGetProfileBySlug(slug)
-  } catch (error) {
-    console.error("Airtable fetch failed:", error)
-    return null
+  if (isAirtableConfigured()) {
+    try {
+      return await airtableGetProfileBySlug(slug)
+    } catch (error) {
+      console.error(`[SEI Data] Failed to fetch profile for slug: ${slug}`, error)
+    }
   }
+  return null // Strictly no fallbacks
 }
 
 export async function getRecordsForProfile(slug: string): Promise<ExperienceRecord[]> {
-  try {
-    return await airtableGetRecordsForProfile(slug)
-  } catch (error) {
-    console.error("Airtable fetch failed:", error)
-    return []
+  if (isAirtableConfigured()) {
+    try {
+      return await airtableGetRecordsForProfile(slug)
+    } catch (error) {
+      console.error(`[SEI Data] Failed to fetch records for slug: ${slug}`, error)
+    }
   }
+  return [] // Strictly no fallbacks
 }
 
 export async function getAllCategories(): Promise<string[]> {
-  try {
-    return await airtableGetAllCategories()
-  } catch (error) {
-    console.error("Airtable fetch failed:", error)
-    return []
+  if (isAirtableConfigured()) {
+    try {
+      return await airtableGetAllCategories()
+    } catch (error) {
+      console.error("[SEI Data] Failed to fetch categories", error)
+    }
   }
+  return []
 }
 
 export async function getAllProfileSlugs(): Promise<string[]> {
-  try {
-    return await airtableGetAllProfileSlugs()
-  } catch (error) {
-    console.error("Airtable fetch failed:", error)
-    return []
+  if (isAirtableConfigured()) {
+    try {
+      return await airtableGetAllProfileSlugs()
+    } catch (error) {
+      console.error("[SEI Data] Failed to fetch profile slugs", error)
+    }
   }
+  return []
 }
+
+// --- SEARCH & FILTERING ---
 
 export async function searchProfiles(params: {
   location?: string
@@ -65,30 +85,59 @@ export async function searchProfiles(params: {
   minScore?: number
   minSample?: number
 }): Promise<ProfileSummary[]> {
-  try {
-    return await airtableSearchProfiles(params)
-  } catch (error) {
-    console.error("Airtable search failed:", error)
-    return []
+  if (isAirtableConfigured()) {
+    try {
+      return await airtableSearchProfiles(params)
+    } catch (error) {
+      console.error("[SEI Data] Airtable search failed:", error)
+    }
   }
+  return []
 }
+
+// --- LOCATION-SPECIFIC DATA ---
 
 export async function getProfilesForArea(areaName: string): Promise<ProfileSummary[]> {
-  try {
-    return await airtableGetProfilesForArea(areaName)
-  } catch (error) {
-    console.error("Airtable fetch failed:", error)
-    return []
+  if (isAirtableConfigured()) {
+    try {
+      return await airtableGetProfilesForArea(areaName)
+    } catch (error) {
+      console.error(`[SEI Data] Failed to fetch profiles for area: ${areaName}`, error)
+    }
   }
+  return []
 }
 
-export async function getRecentRecordsForArea(areaName: string, postcodePrefix: string, limit: number = 6) {
-  try {
-    return await airtableGetRecentRecordsForArea(areaName, postcodePrefix, limit)
-  } catch (error) {
-    return []
+export async function getTopLondonProfiles(limit: number = 5): Promise<ProfileSummary[]> {
+  if (isAirtableConfigured()) {
+    try {
+      const profiles = await airtableGetProfilesForArea("London")
+      return profiles
+        .sort((a, b) => b.overallScore - a.overallScore || b.sampleSize - a.sampleSize)
+        .slice(0, limit)
+    } catch (error) {
+      console.error("[SEI Data] Failed to fetch top London profiles", error)
+    }
   }
+  return []
 }
+
+export async function getRecentRecordsForArea(
+  areaName: string,
+  postcodePrefix: string,
+  limit: number = 6,
+): Promise<Array<ExperienceRecord & { profileSlug: string; companyName: string }>> {
+  if (isAirtableConfigured()) {
+    try {
+      return await airtableGetRecentRecordsForArea(areaName, postcodePrefix, limit)
+    } catch (error) {
+      console.error(`[SEI Data] Failed to fetch recent records for ${areaName}`, error)
+    }
+  }
+  return []
+}
+
+// --- TRADE & CATEGORY LOGIC ---
 
 export async function getProfilesForTrade(tradeSlug: string): Promise<ProfileSummary[]> {
   const trade = getTradeConfig(tradeSlug)
@@ -97,15 +146,39 @@ export async function getProfilesForTrade(tradeSlug: string): Promise<ProfileSum
   const allProfiles = await getAllProfiles()
   
   return allProfiles.filter((p) => {
-    if (!p.category) return false
-    const profileCat = p.category.toLowerCase().trim()
-    
-    return trade.categoryMatch.some((match) => {
-      const matchLower = match.toLowerCase().trim()
-      // Smart Match: Handles "Kitchen" vs "Kitchens" perfectly
-      return profileCat.includes(matchLower) || matchLower.includes(profileCat)
-    })
+    const categoryLower = p.category.toLowerCase()
+    return trade.categoryMatch.some(
+      (match) =>
+        categoryLower === match.toLowerCase() ||
+        categoryLower.includes(match.toLowerCase()) ||
+        match.toLowerCase().includes(categoryLower)
+    )
   }).sort((a, b) => b.overallScore - a.overallScore || b.sampleSize - a.sampleSize)
+}
+
+export async function getProfilesForTradeAndArea(
+  tradeSlug: string,
+  areaName: string
+): Promise<ProfileSummary[]> {
+  const trade = getTradeConfig(tradeSlug)
+  if (!trade) return []
+
+  const areaProfiles = await getProfilesForArea(areaName)
+  
+  return areaProfiles.filter((p) => {
+    const categoryLower = p.category.toLowerCase()
+    return trade.categoryMatch.some(
+      (match) =>
+        categoryLower === match.toLowerCase() ||
+        categoryLower.includes(match.toLowerCase()) ||
+        match.toLowerCase().includes(categoryLower)
+    )
+  }).sort((a, b) => b.overallScore - a.overallScore || b.sampleSize - a.sampleSize)
+}
+
+export async function getTopProfilesForTrade(tradeSlug: string, limit: number = 5): Promise<ProfileSummary[]> {
+  const profiles = await getProfilesForTrade(tradeSlug)
+  return profiles.slice(0, limit)
 }
 
 export type { Profile, ProfileSummary, ExperienceRecord }

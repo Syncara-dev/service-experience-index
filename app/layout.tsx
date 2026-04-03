@@ -7,31 +7,10 @@ import "./globals.css"
 const _inter = Inter({ subsets: ["latin"] })
 const _newsreader = Newsreader({ subsets: ["latin"] })
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://serviceexperienceindex.com"
-const siteDescription = "Independent, verified customer experience data for service businesses"
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: {
-    default: "Service Experience Index",
-    template: "%s | Service Experience Index",
-  },
-  description: siteDescription,
-  openGraph: {
-    type: "website",
-    siteName: "Service Experience Index",
-    title: "Service Experience Index",
-    description: siteDescription,
-    url: siteUrl,
-  },
-  twitter: {
-    card: "summary",
-    title: "Service Experience Index",
-    description: siteDescription,
-  },
-  verification: {
-    google: "wB6F6MOWvLQXM7uxqU6iAVUb9PFtvoXBrVqs2zl0Td0",
-  },
+  title: "Service Experience Index",
+  description: "Independent, verified customer experience data for service businesses",
+  generator: "v0.app",
   icons: {
     icon: [
       {
