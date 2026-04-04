@@ -57,6 +57,7 @@ interface PublicProfileFields {
   public_quotes?: string
   services_offered?: string | string[]
   platform_1_name?: string
+  profile_intro_public?: string
   platform_1_review_count?: number
   platform_1_url?: string
   platform_2_name?: string
@@ -120,6 +121,7 @@ export interface Profile {
   website?: string
   shortDescription?: string
   services?: string[]
+  profile_intro_public?: string
   baseLocation?: string
   areasCovered?: string[]
   externalPresence?: {
@@ -144,6 +146,7 @@ export interface ProfileSummary {
   sampleSize: number
   dateRange: string
   logoUrl?: string
+  profile_intro_public?: string
   shortDescription: string
   website?: string
 }
@@ -256,6 +259,7 @@ function transformProfile(record: AirtableRecord<PublicProfileFields>): Profile 
     profileId: f.profile_id,
     slug: f.slug,
     businessName: f.name,
+    profile_intro_public: f.profile_intro_public,
     location: f.based_in || "",
     category: f.category,
     tags: parseTags(f.Tags),
@@ -303,6 +307,7 @@ function transformProfileSummary(record: AirtableRecord<PublicProfileFields>): P
     profileId: f.profile_id,
     slug: f.slug,
     businessName: f.name,
+    profile_intro_public: f.profile_intro_public,
     location: f.based_in || "",
     category: f.category,
     tags: parseTags(f.Tags),
@@ -586,7 +591,7 @@ export async function getProfilesForArea(areaSlug: string, categorySlug?: string
   return filteredRecords.map(transformProfileSummary).sort((a, b) => a.businessName.localeCompare(b.businessName))
 }
 
-export async function getRecentRecordsForArea(areaSlug: string): Promise<ExperienceRecord[]> {
+export async function getRecentRecordsForArea(areaSlug: string): Promise<Array<ExperienceRecord & { profileSlug: string; companyName: string }>> {
   return []
 }
 /**
