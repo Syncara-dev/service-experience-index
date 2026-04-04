@@ -185,7 +185,7 @@ async function fetchAirtable<T>(table: string, params: Record<string, string> = 
       Authorization: `Bearer ${AIRTABLE_API_KEY}`,
       "Content-Type": "application/json",
     },
-    next: { revalidate: 3600, tags: ["airtable", `table-${table}`] },
+    next: { revalidate: 360, tags: ["airtable", `table-${table}`] },
   })
 
   if (!response.ok) {
