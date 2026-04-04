@@ -589,3 +589,17 @@ export async function getProfilesForArea(areaSlug: string, categorySlug?: string
 export async function getRecentRecordsForArea(areaSlug: string): Promise<ExperienceRecord[]> {
   return []
 }
+/**
+ * API Helper: Fetches a profile by its specific Profile ID string
+ * This fixes the Netlify build error in /api/agent/quote-requests/route.ts
+ */
+export async function getProfileRecordByProfileId(profileId: string): Promise<Profile | null> {
+  const records = await fetchAirtable<PublicProfileFields>(PROFILES_TABLE, {
+    filterByFormula: `{profile_id} = "${profileId}"`,
+    maxRecords: "1",
+  })
+  
+  if (!records || records.length === 0) return null
+  
+  return transformProfile(records[0])
+}
