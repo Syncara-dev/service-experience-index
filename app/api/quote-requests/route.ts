@@ -1,10 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createQuoteRequest } from "@/lib/airtable"
 
-// Simple in-memory rate limiting (in production, use Redis/Upstash)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
-const RATE_LIMIT = 5 // requests
-const RATE_WINDOW = 60 * 1000 // 1 minute
+const RATE_LIMIT = 5
+const RATE_WINDOW = 60 * 1000 
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now()
@@ -25,7 +24,6 @@ function checkRateLimit(ip: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting
     const ip = request.headers.get("x-forwarded-for") || "unknown"
     if (!checkRateLimit(ip)) {
       return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 })
@@ -33,43 +31,39 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
 
-    // Validate required fields
-    const { profile_slug, postcode, service_type, contact_method, contact_value, notes } = body
+    // Destructure the EXACT variables sent by the frontend
+    const { profile, customer_name, customer_email, customer_phone, postcode_full, job_description } = body
 
-    if (!profile_slug || typeof profile_slug !== "string") {
-      return NextResponse.json({ error: "profile_slug is required" }, { status: 400 })
+    // Validation
+    if (!profile || typeof profile !== "string") {
+      return NextResponse.json({ error: "Profile is required" }, { status: 400 })
+    }
+    
+    if (!customer_email || typeof customer_email !== "string" || !customer_email.includes('@')) {
+      return NextResponse.json({ error: "Valid email address is required" }, { status: 400 })
     }
 
-    if (!postcode || typeof postcode !== "string" || postcode.length < 3) {
+    if (!postcode_full || typeof postcode_full !== "string" || postcode_full.length < 3) {
       return NextResponse.json({ error: "Valid postcode is required" }, { status: 400 })
     }
 
-    if (!service_type || typeof service_type !== "string") {
-      return NextResponse.json({ error: "service_type is required" }, { status: 400 })
+    if (!job_description || typeof job_description !== "string") {
+      return NextResponse.json({ error: "Job description is required" }, { status: 400 })
     }
 
-    if (!contact_method || !["email", "phone"].includes(contact_method)) {
-      return NextResponse.json({ error: "contact_method must be 'email' or 'phone'" }, { status: 400 })
-    }
-
-    if (!contact_value || typeof contact_value !== "string" || contact_value.length < 5) {
-      return NextResponse.json({ error: "Valid contact information is required" }, { status: 400 })
-    }
-
-    // Write to Airtable
+    // Write to Airtable via helper function
     const success = await createQuoteRequest({
-      profile_slug,
-      postcode,
-      service_type,
-      contact_method,
-      contact_value,
-      notes: notes || "",
+      profile,
+      customer_name,
+      customer_email,
+      customer_phone,
+      postcode_full,
+      job_description
     })
 
     if (!success) {
-      // Even if Airtable fails, return success to the user
-      // In production, you might queue this for retry
       console.error("[v0] Failed to write quote request to Airtable")
+      // Depending on your preference, you might want to return a 500 error here if Airtable fails
     }
 
     return NextResponse.json({

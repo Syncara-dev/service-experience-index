@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,12 +27,13 @@ export function QuoteRequestForm({ profileSlug, businessName, category }: QuoteR
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Aligned exactly with Airtable columns
   const [formData, setFormData] = useState({
-    postcode: "",
-    service_type: "",
-    notes: "",
-    email: "",
-    phone: "",
+    customer_name: "",
+    customer_email: "",
+    customer_phone: "",
+    postcode_full: "",
+    job_description: "",
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,7 +46,7 @@ export function QuoteRequestForm({ profileSlug, businessName, category }: QuoteR
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          profile_slug: profileSlug,
+          profile: profileSlug, // mapping profileSlug to 'profile'
           ...formData,
         }),
       })
@@ -67,11 +67,11 @@ export function QuoteRequestForm({ profileSlug, businessName, category }: QuoteR
 
   const resetForm = () => {
     setFormData({
-      postcode: "",
-      service_type: "",
-      notes: "",
-      email: "",
-      phone: "",
+      customer_name: "",
+      customer_email: "",
+      customer_phone: "",
+      postcode_full: "",
+      job_description: "",
     })
     setSuccess(false)
     setError(null)
@@ -106,59 +106,61 @@ export function QuoteRequestForm({ profileSlug, businessName, category }: QuoteR
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+            
             <div className="space-y-2">
-              <Label htmlFor="postcode">Postcode</Label>
+              <Label htmlFor="customer_name">Name</Label>
               <Input
-                id="postcode"
-                placeholder="e.g. SW1A 1AA"
-                value={formData.postcode}
-                onChange={(e) => setFormData({ ...formData, postcode: e.target.value })}
+                id="customer_name"
+                placeholder="John Doe"
+                value={formData.customer_name}
+                onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="service_type">Service Required</Label>
+              <Label htmlFor="customer_email">Email Address</Label>
               <Input
-                id="service_type"
-                placeholder={`e.g. ${category}`}
-                value={formData.service_type}
-                onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Additional Notes</Label>
-              <Textarea
-                id="notes"
-                placeholder="Any details about your project..."
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
+                id="customer_email"
                 type="email"
                 placeholder="you@example.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                value={formData.customer_email}
+                onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="customer_phone">Phone Number</Label>
               <Input
-                id="phone"
+                id="customer_phone"
                 type="tel"
                 placeholder="07123 456789"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                value={formData.customer_phone}
+                onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="postcode_full">Postcode</Label>
+              <Input
+                id="postcode_full"
+                placeholder="e.g. SW1A 1AA"
+                value={formData.postcode_full}
+                onChange={(e) => setFormData({ ...formData, postcode_full: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="job_description">Job Description</Label>
+              <Textarea
+                id="job_description"
+                placeholder={`Tell us what you need (e.g. ${category})...`}
+                value={formData.job_description}
+                onChange={(e) => setFormData({ ...formData, job_description: e.target.value })}
+                rows={3}
                 required
               />
             </div>

@@ -62,6 +62,7 @@ interface PublicProfileFields {
   platform_2_name?: string
   platform_2_review_count?: number
   platform_2_url?: string
+  experience_summary_public?: string
 }
 
 interface PublicRecordFields {
@@ -129,6 +130,7 @@ export interface Profile {
     platform2ReviewCount?: number
     platform2Url?: string
   }
+  experienceSummary?: string
 }
 
 export interface ProfileSummary {
@@ -287,6 +289,7 @@ function transformProfile(record: AirtableRecord<PublicProfileFields>): Profile 
       platform2ReviewCount: f.platform_2_review_count,
       platform2Url: f.platform_2_url,
     },
+    experienceSummary: f.experience_summary_public || "",
   }
 }
 
@@ -467,48 +470,51 @@ export async function searchProfiles(params: {
   return profiles
 }
 
-export async function createQuoteRequest(data: {
-  profile_slug: string
-  postcode: string
-  service_type: string
-  notes?: string
-  contact_method: string
-  contact_value: string
-}): Promise<boolean> {
-  const fields: Record<string, unknown> = {
-    postcode_full: data.postcode,
-    job_description: [data.service_type, data.notes].filter(Boolean).join(" — "),
-    lead_status: "new",
-    source: "website",
-    profile_slug: data.profile_slug,
-  }
-  
-  if (data.contact_method === "email") fields.customer_email = data.contact_value
-  if (data.contact_method === "phone") fields.customer_phone = data.contact_value
-
-  const response = await fetch(`${BASE_URL}/${encodeURIComponent("Inbound Leads")}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ records: [{ fields }] }),
-  })
-
-  return response.ok
+// Add or update this interface in your airtable.ts file
+export interface QuoteRequestData {
+  profile: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  postcode_full: string;
+  job_description: string;
 }
 
-export async function getProfileRecordByProfileId(profileId: string): Promise<{ recordId: string; name: string; slug: string } | null> {
-  const records = await fetchAirtable<PublicProfileFields>(PROFILES_TABLE, {
-    filterByFormula: `{profile_id} = "${profileId}"`,
-    maxRecords: "1",
-  })
+export async function createQuoteRequest(data: QuoteRequestData) {
+  try {
+    const response = await fetch(`${BASE_URL}/${encodeURIComponent("Inbound Leads")}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        records: [
+          {
+            fields: {
+              "profile": data.profile,
+              "customer_name": data.customer_name,
+              "customer_email": data.customer_email,
+              "customer_phone": data.customer_phone,
+              "postcode_full": data.postcode_full,
+              "job_description": data.job_description,
+              "lead_status": "new",
+              "source": "website"
+            }
+          }
+        ]
+      }),
+    });
 
-  if (records.length === 0) return null
-  return {
-    recordId: records[0].id,
-    name: records[0].fields.name,
-    slug: records[0].fields.slug,
+    if (!response.ok) {
+      console.error("Airtable creation error:", await response.text());
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Airtable creation error:", error);
+    return false;
   }
 }
 

@@ -37,7 +37,7 @@ export function PaginatedRecords({ records, businessName }: PaginatedRecordsProp
     // Added scroll-mt-24 so it doesn't get hidden under a sticky site header!
     <section className="py-10 border-b border-border scroll-mt-24" ref={scrollRef}>
       <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-6">
-        Experience Records ({records.length})
+        {records.length} Verified Customer Experience Records
       </h2>
       
       {/* The records swap out entirely, they do not stack */}

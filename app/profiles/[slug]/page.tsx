@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!profile) return { title: "Profile Not Found | SEI" }
 
-  const title = `${profile.businessName} – Verified Experience Profile`
+  const title = `${profile.businessName} Verified Reviews & Experience Score | Service Experience Index`
   return {
     title,
     description: `Verified experience for ${profile.businessName}. Score: ${profile.overallScore}/10 based on ${profile.sampleSize} conversations.`,
@@ -59,15 +59,18 @@ export default async function ProfilePage({ params }: PageProps) {
           </p>
 
           {/* Experience Summary */}
-          <section className="py-10 border-b border-border">
-            <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">Experience Summary</h2>
-            <p className="text-foreground leading-relaxed">{profile.summary}</p>
-          </section>
+          {profile.experienceSummary && (
+            <section className="py-10 border-b border-border">
+              <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">Experience Summary</h2>
+              <p className="text-foreground leading-relaxed">{profile.experienceSummary}</p>
+            </section>
+          )}
 
           {/* Score Breakdown */}
           <section className="py-10 border-b border-border">
             <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-6">Score Breakdown</h2>
-            <div className="space-y-4">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-x-12">
               <ScoreBar label="Product Satisfaction" score={profile.scores.productSatisfaction} />
               <ScoreBar label="Installation Satisfaction" score={profile.scores.installationSatisfaction} />
               <ScoreBar label="Process & Communication" score={profile.scores.processCommunication} />
@@ -80,7 +83,7 @@ export default async function ProfilePage({ params }: PageProps) {
             <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-6">Consistency Signals</h2>
             <ConsistencySignals {...profile.consistencySignals} />
           </section>
-          
+
           {/* Services Offered */}
           {profile.services && profile.services.length > 0 && (
             <section className="py-10 border-b border-border">
@@ -108,8 +111,8 @@ export default async function ProfilePage({ params }: PageProps) {
                     <span className="text-muted-foreground block mb-3">Areas served</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.areasCovered.map((area: string) => (
-                        <span 
-                          key={area} 
+                        <span
+                          key={area}
                           className="text-xs px-3 py-1.5 rounded-full border border-border bg-card hover:border-accent/50 hover:bg-muted/30 transition-colors cursor-default"
                         >
                           {area}
@@ -138,6 +141,16 @@ export default async function ProfilePage({ params }: PageProps) {
           <section className="py-10">
             <VerificationDisclosure />
           </section>
+
+          {/* Link back to Homepage */}
+          <div className="pb-10 text-center">
+            <a
+              href="https://serviceexperienceindex.com"
+              className="text-sm font-medium text-primary hover:text-primary/80 underline underline-offset-4 transition-colors"
+            >
+              View more profiles on the Service Experience Index
+            </a>
+          </div>
         </article>
       </main>
 
