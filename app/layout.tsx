@@ -20,20 +20,7 @@ export const metadata: Metadata = {
     site: "@SEI_UK",
   },
   icons: {
-    icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/sei.svg",
-        type: "image/svg+xml",
-      },
-    ],
+    icon: [{ url: "/sei.svg", type: "image/svg+xml" }],
     apple: "/apple-icon.png",
   },
 }
