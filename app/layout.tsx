@@ -10,7 +10,15 @@ const _newsreader = Newsreader({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Service Experience Index",
   description: "Independent, verified customer experience data for service businesses",
-  generator: "v0.app",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://serviceexperienceindex.com"),
+  openGraph: {
+    siteName: "Service Experience Index",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    site: "@SEI_UK",
+  },
   icons: {
     icon: [
       {
@@ -30,6 +38,15 @@ export const metadata: Metadata = {
   },
 }
 
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Service Experience Index",
+  url: "https://serviceexperienceindex.com",
+  description: "Independent registry of verified customer experience data for UK home improvement and trade companies.",
+  sameAs: ["https://serviceexperienceindex.com"],
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -37,6 +54,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
+      </head>
       <body className={`font-sans antialiased`}>
         {children}
         <Analytics />

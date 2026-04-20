@@ -8,8 +8,9 @@ export async function GET() {
 
   const staticPages = [
     { url: "/", priority: "1.0", changefreq: "weekly" },
-    { url: "/standards", priority: "0.8", changefreq: "monthly" },
     { url: "/profiles", priority: "0.9", changefreq: "daily" },
+    { url: "/methodology", priority: "0.8", changefreq: "monthly" },
+    { url: "/standards", priority: "0.7", changefreq: "monthly" },
   ]
 
   const profilePages = slugs.map((slug) => ({

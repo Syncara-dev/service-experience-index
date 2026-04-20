@@ -5,10 +5,13 @@ export default function robots(): MetadataRoute.Robots {
 
   return {
     rules: [
-      {
-        userAgent: "*",
-        allow: "/",
-      },
+      { userAgent: "GPTBot", allow: "/" },
+      { userAgent: "PerplexityBot", allow: "/" },
+      { userAgent: "ClaudeBot", allow: "/" },
+      { userAgent: "Google-Extended", allow: "/" },
+      { userAgent: "anthropic-ai", allow: "/" },
+      { userAgent: "ChatGPT-User", allow: "/" },
+      { userAgent: "*", allow: "/" },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
   }

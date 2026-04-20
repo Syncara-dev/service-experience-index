@@ -29,11 +29,27 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!profile) return { title: "Profile Not Found | SEI" }
 
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://serviceexperienceindex.com"
+  const profileUrl = `${baseUrl}/profiles/${slug}`
   const title = `${profile.businessName} Verified Reviews & Experience Score | Service Experience Index`
+  const description = `${profile.businessName} has an SEI score of ${profile.overallScore}/10 based on ${profile.sampleSize} verified customer interviews. Independent, structured experience data — not self-submitted reviews.`
+
   return {
     title,
-    description: `Verified experience for ${profile.businessName}. Score: ${profile.overallScore}/10 based on ${profile.sampleSize} conversations.`,
-    openGraph: { title, type: "profile" },
+    description,
+    alternates: { canonical: profileUrl },
+    openGraph: {
+      title,
+      description,
+      url: profileUrl,
+      type: "website",
+      siteName: "Service Experience Index",
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
   }
 }
 
