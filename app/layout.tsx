@@ -19,9 +19,6 @@ export const metadata: Metadata = {
     card: "summary",
     site: "@SEI_UK",
   },
-  icons: {
-    apple: "/apple-icon.png",
-  },
 }
 
 const organizationSchema = {
