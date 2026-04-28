@@ -1,4 +1,7 @@
+import Link from "next/link"
+
 interface ExperienceRecordProps {
+  slug?: string
   customerLabel: string
   date: string
   headline: string
@@ -63,6 +66,7 @@ function extractPostcode(customerLabel: string): string | null {
 }
 
 export function ExperienceRecordCard({
+  slug,
   customerLabel,
   date,
   headline,
@@ -178,6 +182,18 @@ export function ExperienceRecordCard({
         )}
 
       </div>
+
+      {slug && (
+        <div className="border-t border-border px-5 py-3">
+          <Link
+            href={`/records/${slug}`}
+            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+          >
+            View full experience
+            <span aria-hidden="true">›</span>
+          </Link>
+        </div>
+      )}
     </article>
   )
 }

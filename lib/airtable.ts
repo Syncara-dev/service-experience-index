@@ -68,7 +68,11 @@ interface PublicProfileFields {
 
 interface PublicRecordFields {
   record_id?: string
-  profile?: string[]           
+  "Record Slug"?: string
+  "Project Details"?: string
+  "Job Type"?: string
+  "Record ID (Public)"?: string
+  profile?: string[]
   customer_label?: string
   experience_date?: string
   overall_score?: number
@@ -152,9 +156,14 @@ export interface ProfileSummary {
 }
 
 export interface ExperienceRecord {
+  slug?: string
+  projectDetails?: string
+  jobType?: string
+  recordIdPublic?: string
   customerLabel: string
   date: string
   headline: string
+  projectType?: string
   overallScore: number
   summaryPublic: string
   sentiment: "positive" | "mixed" | "negative"
@@ -329,6 +338,10 @@ function transformRecord(
   const sentiment: "positive" | "mixed" | "negative" = score >= 8 ? "positive" : score >= 5 ? "mixed" : "negative"
   
   return {
+    slug: f["Record Slug"],
+    projectDetails: f["Project Details"],
+    jobType: f["Job Type"],
+    recordIdPublic: f["Record ID (Public)"],
     customerLabel: f.customer_label || "Verified Customer",
     date: f.experience_date || f.experience_month || "",
     headline: "",
@@ -438,6 +451,44 @@ export async function getRecordsForProfile(profileSlug: string): Promise<Experie
   return records
     .map((r) => transformRecord(r, scoreMap.get(r.id) ?? {}))
     .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
+}
+
+export async function getRecordBySlug(
+  slug: string
+): Promise<(ExperienceRecord & { profileSlug: string; profileName: string; profileLogoUrl?: string }) | null> {
+  const records = await fetchAirtable<PublicRecordFields>(RECORDS_TABLE, {
+    filterByFormula: `{Record Slug} = "${slug}"`,
+    maxRecords: "1",
+  })
+  if (records.length === 0) return null
+
+  const record = records[0]
+  const profileAirtableId = record.fields.profile?.[0]
+
+  const [allDimensionScores, profileRecords] = await Promise.all([
+    fetchAirtable<DimensionScoreFields>(DIMENSION_SCORES_TABLE),
+    profileAirtableId
+      ? fetchAirtable<PublicProfileFields>(PROFILES_TABLE, {
+          filterByFormula: `RECORD_ID() = "${profileAirtableId}"`,
+          maxRecords: "1",
+        })
+      : Promise.resolve([]),
+  ])
+
+  const scoreMap: Record<string, number> = {}
+  for (const ds of allDimensionScores) {
+    if (!ds.fields.record?.includes(record.id)) continue
+    const dim = ds.fields.rds_id?.split("::")[1]
+    if (dim && ds.fields.score !== undefined) scoreMap[dim] = ds.fields.score
+  }
+
+  const profile = profileRecords[0]
+  return {
+    ...transformRecord(record, scoreMap),
+    profileSlug: profile?.fields.slug || "",
+    profileName: profile?.fields.name || "",
+    profileLogoUrl: profile?.fields["Company Logo"]?.[0]?.url ?? profile?.fields.logo_url,
+  }
 }
 
 export async function getAllCategories(): Promise<string[]> {

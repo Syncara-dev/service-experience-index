@@ -2,6 +2,7 @@ import {
   getAllProfiles as airtableGetAllProfiles,
   getProfileBySlug as airtableGetProfileBySlug,
   getRecordsForProfile as airtableGetRecordsForProfile,
+  getRecordBySlug as airtableGetRecordBySlug,
   getAllCategories as airtableGetAllCategories,
   getAllProfileSlugs as airtableGetAllProfileSlugs,
   searchProfiles as airtableSearchProfiles,
@@ -53,6 +54,19 @@ export async function getRecordsForProfile(slug: string): Promise<ExperienceReco
     }
   }
   return [] // Strictly no fallbacks
+}
+
+export async function getRecordBySlug(
+  slug: string
+): Promise<(ExperienceRecord & { profileSlug: string; profileName: string; profileLogoUrl?: string }) | null> {
+  if (isAirtableConfigured()) {
+    try {
+      return await airtableGetRecordBySlug(slug)
+    } catch (error) {
+      console.error(`[SEI Data] Failed to fetch record for slug: ${slug}`, error)
+    }
+  }
+  return null
 }
 
 export async function getAllCategories(): Promise<string[]> {
