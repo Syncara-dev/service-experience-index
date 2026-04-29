@@ -19,6 +19,9 @@ export const metadata: Metadata = {
     card: "summary",
     site: "@SEI_UK",
   },
+  verification: {
+    google: "wB6F6MOWvLQXM7uxqU6iAVUb9PFtvoXBrVqs2zl0Td0",
+  },
 }
 
 const organizationSchema = {
