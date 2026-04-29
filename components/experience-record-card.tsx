@@ -6,6 +6,7 @@ interface ExperienceRecordProps {
   date: string
   headline: string
   projectType?: string
+  projectDetails?: string
   overallScore: number
   summaryPublic: string
   sentiment: "positive" | "mixed" | "negative"
@@ -71,6 +72,7 @@ export function ExperienceRecordCard({
   date,
   headline,
   projectType,
+  projectDetails,
   overallScore,
   summaryPublic,
   sentiment,
@@ -112,24 +114,14 @@ export function ExperienceRecordCard({
         </div>
 
         {/* Project Details */}
-        {(() => {
-          const postcode = extractPostcode(customerLabel)
-          const hasDetails = projectType || postcode
-          if (!hasDetails) return null
-          
-          const detailParts: string[] = []
-          if (projectType) detailParts.push(projectType)
-          if (postcode) detailParts.push(postcode)
-          
-          return (
-            <div className="mb-4">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">
-                Project Details
-              </p>
-              <p className="text-sm text-foreground">{detailParts.join(" · ")}</p>
-            </div>
-          )
-        })()}
+        {projectDetails && (
+          <div className="mb-4">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">
+              Project Details
+            </p>
+            <p className="text-sm text-foreground">{projectDetails}</p>
+          </div>
+        )}
 
         {/* Customer summary */}
         <p className="text-sm text-foreground leading-relaxed mb-4">{summaryPublic}</p>
