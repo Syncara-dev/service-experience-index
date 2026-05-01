@@ -15,6 +15,9 @@ export function SiteFooter() {
             <p className="text-sm text-muted-foreground leading-relaxed">
               Independent, verified customer experience data for service businesses.
             </p>
+            <a href="mailto:hello@serviceexperienceindex.com" className="mt-3 inline-block text-sm font-semibold text-foreground hover:text-muted-foreground transition-colors">
+              Contact: hello@serviceexperienceindex.com
+            </a>
           </div>
           <div className="flex flex-col gap-3">
             <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Resources</span>
