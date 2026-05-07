@@ -129,6 +129,32 @@ export default async function ProfilePage({ params }: PageProps) {
             </section>
           )}
 
+          {(profile.baseLocation || (profile.areasCovered && profile.areasCovered.length > 0)) && (
+            <section className="py-10 border-b border-border">
+              <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">Location</h2>
+              <div className="space-y-4 text-sm text-foreground">
+                {profile.baseLocation && (
+                  <p><span className="text-muted-foreground">Based in</span> {profile.baseLocation}</p>
+                )}
+                {profile.areasCovered && profile.areasCovered.length > 0 && (
+                  <div>
+                    <span className="text-muted-foreground block mb-3">Areas served</span>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.areasCovered.map((area: string) => (
+                        <span
+                          key={area}
+                          className="text-xs px-3 py-1.5 rounded-full border border-border bg-card hover:border-accent/50 hover:bg-muted/30 transition-colors cursor-default"
+                        >
+                          {area}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
           <div className="py-6 border-b border-border">
             <QuoteRequestForm
               profileSlug={profile.slug}
