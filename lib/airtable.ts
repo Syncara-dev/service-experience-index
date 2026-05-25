@@ -502,6 +502,13 @@ export async function getAllProfileSlugs(): Promise<string[]> {
   return profiles.map((p) => p.slug)
 }
 
+export async function getAllRecordSlugs(): Promise<string[]> {
+  const records = await fetchAirtable<PublicRecordFields>(RECORDS_TABLE)
+  return records
+    .map((r) => r.fields["Record Slug"])
+    .filter((slug): slug is string => Boolean(slug))
+}
+
 export async function searchProfiles(params: {
   location?: string
   category?: string

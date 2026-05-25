@@ -5,6 +5,7 @@ import {
   getRecordBySlug as airtableGetRecordBySlug,
   getAllCategories as airtableGetAllCategories,
   getAllProfileSlugs as airtableGetAllProfileSlugs,
+  getAllRecordSlugs as airtableGetAllRecordSlugs,
   searchProfiles as airtableSearchProfiles,
   getProfilesForArea as airtableGetProfilesForArea,
   getRecentRecordsForArea as airtableGetRecentRecordsForArea,
@@ -86,6 +87,17 @@ export async function getAllProfileSlugs(): Promise<string[]> {
       return await airtableGetAllProfileSlugs()
     } catch (error) {
       console.error("[SEI Data] Failed to fetch profile slugs", error)
+    }
+  }
+  return []
+}
+
+export async function getAllRecordSlugs(): Promise<string[]> {
+  if (isAirtableConfigured()) {
+    try {
+      return await airtableGetAllRecordSlugs()
+    } catch (error) {
+      console.error("[SEI Data] Failed to fetch record slugs", error)
     }
   }
   return []
