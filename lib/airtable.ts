@@ -189,25 +189,36 @@ async function fetchAirtable<T>(table: string, params: Record<string, string> = 
     return []
   }
 
-  const url = new URL(`${BASE_URL}/${encodeURIComponent(table)}`)
-  Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value))
+  const allRecords: AirtableRecord<T>[] = []
+  let offset: string | undefined
 
-  const response = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    next: { revalidate: 0, tags: ["airtable", `table-${table}`] },
-  })
+  do {
+    const url = new URL(`${BASE_URL}/${encodeURIComponent(table)}`)
+    Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value))
+    if (offset) url.searchParams.set("offset", offset)
 
-  if (!response.ok) {
-    const errorBody = await response.text()
-    console.error(`[Airtable] Fetch failed (${response.status}):`, errorBody)
-    return []
-  }
+    const response = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      next: { revalidate: 0, tags: ["airtable", `table-${table}`] },
+    })
 
-  const data: AirtableResponse<T> = await response.json()
-  return data.records || []
+    if (!response.ok) {
+      const errorBody = await response.text()
+      console.error(`[Airtable] Fetch failed (${response.status}):`, errorBody)
+      return allRecords
+    }
+
+    const data: AirtableResponse<T> = await response.json()
+    allRecords.push(...(data.records || []))
+    offset = data.offset
+
+    if (params.maxRecords) break
+  } while (offset)
+
+  return allRecords
 }
 
 function formatDateRange(start: string, end: string): string {
