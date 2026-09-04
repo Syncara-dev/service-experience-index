@@ -1,3 +1,5 @@
+import type { CustomerThemes } from "@/lib/airtable"
+
 interface ProfileJsonLdProps {
   businessName: string
   location: string
@@ -9,6 +11,7 @@ interface ProfileJsonLdProps {
   website?: string
   areasCovered?: string[]
   customerVoice?: { quote: string; name: string }[]
+  customerThemes?: CustomerThemes
 }
 
 const SCHEMA_TYPE_MAP: Record<string, string> = {
@@ -51,6 +54,7 @@ export function ProfileJsonLd({
   website,
   areasCovered,
   customerVoice,
+  customerThemes,
 }: ProfileJsonLdProps) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://serviceexperienceindex.com"
   const schemaType = SCHEMA_TYPE_MAP[category] || "LocalBusiness"
@@ -81,6 +85,14 @@ export function ProfileJsonLd({
       worstRating: "1",
       ratingCount: sampleSize,
     },
+  }
+
+  if (customerThemes && customerThemes.signals.length > 0) {
+    jsonLd.additionalProperty = customerThemes.signals.map((s) => ({
+      "@type": "PropertyValue",
+      name: s.label,
+      value: `${s.count} of ${customerThemes.n} interviews (${Math.round(s.pct)}%)`,
+    }))
   }
 
   if (customerVoice && customerVoice.length > 0) {

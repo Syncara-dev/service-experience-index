@@ -64,6 +64,7 @@ interface PublicProfileFields {
   platform_2_review_count?: number
   platform_2_url?: string
   experience_summary_public?: string
+  signals_top_6?: string
 }
 
 interface PublicRecordFields {
@@ -137,6 +138,21 @@ export interface Profile {
     platform2Url?: string
   }
   experienceSummary?: string
+  customerThemes?: CustomerThemes
+}
+
+export interface CustomerThemeSignal {
+  key: string
+  label: string
+  count: number
+  pct: number
+}
+
+export interface CustomerThemes {
+  n: number
+  windowStart: string
+  windowEnd: string
+  signals: CustomerThemeSignal[]
 }
 
 export interface ProfileSummary {
@@ -260,6 +276,32 @@ function normalizeUrl(url?: string): string | undefined {
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
 }
 
+function parseCustomerThemes(raw?: string): CustomerThemes | undefined {
+  if (!raw || typeof raw !== "string") return undefined
+  try {
+    const parsed = JSON.parse(raw)
+    if (!parsed || !Array.isArray(parsed.signals) || parsed.signals.length === 0) return undefined
+    const signals: CustomerThemeSignal[] = parsed.signals
+      .filter((s: any) => s && typeof s.label === "string" && typeof s.count === "number")
+      .slice(0, 6)
+      .map((s: any) => ({
+        key: String(s.key ?? ""),
+        label: String(s.label),
+        count: Number(s.count),
+        pct: Number(s.pct ?? 0),
+      }))
+    if (signals.length === 0) return undefined
+    return {
+      n: Number(parsed.n ?? 0),
+      windowStart: String(parsed.window_start ?? ""),
+      windowEnd: String(parsed.window_end ?? ""),
+      signals,
+    }
+  } catch {
+    return undefined
+  }
+}
+
 function parseTags(tags?: string | string[]): string[] {
   if (!tags) return []
   if (Array.isArray(tags)) return tags.filter(Boolean)
@@ -314,6 +356,7 @@ function transformProfile(record: AirtableRecord<PublicProfileFields>): Profile 
       platform2Url: f.platform_2_url,
     },
     experienceSummary: f.experience_summary_public || "",
+    customerThemes: parseCustomerThemes(f.signals_top_6),
   }
 }
 
