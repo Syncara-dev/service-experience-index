@@ -130,7 +130,7 @@ export function ExperienceRecordCard({
         {customerNote && customerNote.trim() && (
           <div className="mb-4 pb-4 border-b border-border">
             <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70 mb-1">
-              Customer note
+              CUSTOMER VOICE
             </p>
             <p className="text-xs text-muted-foreground leading-relaxed">
               &ldquo;{customerNote}&rdquo;

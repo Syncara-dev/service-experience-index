@@ -178,7 +178,7 @@ export default async function RecordPage({ params }: PageProps) {
               {record.customerNote && record.customerNote.trim() && (
                 <div className="mb-4">
                   <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70 mb-1">
-                    Customer note
+                    CUSTOMER VOICE
                   </p>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     &ldquo;{record.customerNote}&rdquo;
