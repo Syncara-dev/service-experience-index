@@ -65,6 +65,9 @@ interface PublicProfileFields {
   platform_2_url?: string
   experience_summary_public?: string
   signals_top_6?: string
+  evidence_by_product_type_json?: string
+  evidence_by_area_json?: string
+  evidence_segments_json?: string
 }
 
 interface PublicRecordFields {
@@ -139,6 +142,9 @@ export interface Profile {
   }
   experienceSummary?: string
   customerThemes?: CustomerThemes
+  evidenceByProductType?: EvidenceByProductType
+  evidenceByArea?: EvidenceByArea
+  localEvidence?: LocalEvidence
 }
 
 export interface CustomerThemeSignal {
@@ -153,6 +159,49 @@ export interface CustomerThemes {
   windowStart: string
   windowEnd: string
   signals: CustomerThemeSignal[]
+}
+
+export interface EvidenceProductType {
+  key: string
+  label: string
+  labelSingular: string
+  verifiedProjects: number
+  unitsInstalled: number
+  averageScore: number | null
+  evidenceStatus: string
+}
+
+export interface EvidenceByProductType {
+  n: number
+  windowStart: string
+  windowEnd: string
+  methodology: string
+  productTypes: EvidenceProductType[]
+}
+
+export interface EvidenceArea {
+  areaKey: string
+  area: string
+  postcodeDistricts: string[]
+  verifiedExperiences: number
+  averageScore: number | null
+  evidenceStatus: string
+}
+
+export interface EvidenceByArea {
+  n: number
+  windowStart: string
+  windowEnd: string
+  methodology: string
+  areas: EvidenceArea[]
+  otherAreas: { verifiedExperiences: number; areaCount: number; region: string | null }
+}
+
+export interface LocalEvidence {
+  area: string
+  labelSingular: string
+  verifiedProjects: number
+  unitsInstalled: number
 }
 
 export interface ProfileSummary {
@@ -302,6 +351,97 @@ function parseCustomerThemes(raw?: string): CustomerThemes | undefined {
   }
 }
 
+function parseEvidenceJson(raw?: string): any | undefined {
+  if (!raw || typeof raw !== "string") return undefined
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === "object" ? parsed : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function toScore(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null
+}
+
+function parseEvidenceByProductType(raw?: string): EvidenceByProductType | undefined {
+  const parsed = parseEvidenceJson(raw)
+  if (!parsed || !Array.isArray(parsed.product_types)) return undefined
+  const productTypes: EvidenceProductType[] = parsed.product_types
+    .filter((p: any) => p && typeof p.label === "string")
+    .map((p: any) => ({
+      key: String(p.key ?? p.label),
+      label: String(p.label),
+      labelSingular: String(p.label_singular ?? p.label),
+      verifiedProjects: Number(p.verified_projects ?? 0),
+      unitsInstalled: Number(p.units_installed ?? 0),
+      averageScore: toScore(p.average_score),
+      evidenceStatus: String(p.evidence_status ?? "building"),
+    }))
+  if (productTypes.length === 0) return undefined
+  return {
+    n: Number(parsed.n ?? 0),
+    windowStart: String(parsed.window_start ?? ""),
+    windowEnd: String(parsed.window_end ?? ""),
+    methodology: String(parsed.methodology ?? ""),
+    productTypes,
+  }
+}
+
+function parseEvidenceByArea(raw?: string): EvidenceByArea | undefined {
+  const parsed = parseEvidenceJson(raw)
+  if (!parsed || !Array.isArray(parsed.areas)) return undefined
+  const areas: EvidenceArea[] = parsed.areas
+    .filter((a: any) => a && typeof a.area === "string")
+    .map((a: any) => ({
+      areaKey: String(a.area_key ?? a.area),
+      area: String(a.area),
+      postcodeDistricts: Array.isArray(a.postcode_districts)
+        ? a.postcode_districts.map((d: any) => String(d)).filter(Boolean)
+        : [],
+      verifiedExperiences: Number(a.verified_experiences ?? 0),
+      averageScore: toScore(a.average_score),
+      evidenceStatus: String(a.evidence_status ?? "building"),
+    }))
+  if (areas.length === 0) return undefined
+  const other = parsed.other_areas ?? {}
+  return {
+    n: Number(parsed.n ?? 0),
+    windowStart: String(parsed.window_start ?? ""),
+    windowEnd: String(parsed.window_end ?? ""),
+    methodology: String(parsed.methodology ?? ""),
+    areas,
+    otherAreas: {
+      verifiedExperiences: Number(other.verified_experiences ?? 0),
+      areaCount: Number(other.area_count ?? 0),
+      region: typeof other.region === "string" && other.region ? other.region : null,
+    },
+  }
+}
+
+/**
+ * Single "Local evidence" line, taken from evidence_segments_json.area_product_type[0].
+ * The singular product label is resolved from evidence_by_product_type_json, which is the
+ * only place label_singular is published.
+ */
+function parseLocalEvidence(
+  raw: string | undefined,
+  productTypes?: EvidenceByProductType,
+): LocalEvidence | undefined {
+  const parsed = parseEvidenceJson(raw)
+  const segment = Array.isArray(parsed?.area_product_type) ? parsed.area_product_type[0] : undefined
+  if (!segment || typeof segment.area !== "string" || typeof segment.label !== "string") return undefined
+  const match = productTypes?.productTypes.find((p) => p.key === String(segment.key))
+  const singular = match?.labelSingular ?? String(segment.label).replace(/s$/, "")
+  return {
+    area: String(segment.area),
+    labelSingular: singular.toLowerCase(),
+    verifiedProjects: Number(segment.verified_projects ?? 0),
+    unitsInstalled: Number(segment.units_installed ?? 0),
+  }
+}
+
 function parseTags(tags?: string | string[]): string[] {
   if (!tags) return []
   if (Array.isArray(tags)) return tags.filter(Boolean)
@@ -313,6 +453,7 @@ function parseTags(tags?: string | string[]): string[] {
  */
 function transformProfile(record: AirtableRecord<PublicProfileFields>): Profile {
   const f = record.fields
+  const evidenceByProductType = parseEvidenceByProductType(f.evidence_by_product_type_json)
   const dateRange = f.date_range_start && f.date_range_end
       ? formatDateRange(f.date_range_start, f.date_range_end)
       : f.last_updated_at ? new Date(f.last_updated_at).toLocaleDateString("en-GB", { month: "short", year: "numeric" }) : ""
@@ -357,6 +498,9 @@ function transformProfile(record: AirtableRecord<PublicProfileFields>): Profile 
     },
     experienceSummary: f.experience_summary_public || "",
     customerThemes: parseCustomerThemes(f.signals_top_6),
+    evidenceByProductType,
+    evidenceByArea: parseEvidenceByArea(f.evidence_by_area_json),
+    localEvidence: parseLocalEvidence(f.evidence_segments_json, evidenceByProductType),
   }
 }
 

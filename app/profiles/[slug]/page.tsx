@@ -6,6 +6,10 @@ import { ShareableProfileHeader } from "@/components/shareable-profile-header"
 import { ScoreBar } from "@/components/score-bar"
 import { ConsistencySignals } from "@/components/consistency-signals"
 import { CustomerThemes } from "@/components/customer-themes"
+import {
+  VerifiedExperienceByArea,
+  VerifiedExperienceByProductType,
+} from "@/components/verified-experience"
 import { VerificationDisclosure } from "@/components/verification-disclosure"
 import { QuoteRequestForm } from "@/components/quote-request-form"
 import { ProfileJsonLd } from "@/components/profile-json-ld"
@@ -123,6 +127,27 @@ export default async function ProfilePage({ params }: PageProps) {
                 What customers mention most
               </h2>
               <CustomerThemes data={profile.customerThemes} />
+            </section>
+          )}
+
+          {profile.evidenceByProductType && (
+            <section className="py-10 border-b border-border">
+              <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">
+                Verified experience by project type
+              </h2>
+              <VerifiedExperienceByProductType data={profile.evidenceByProductType} />
+            </section>
+          )}
+
+          {profile.evidenceByArea && (
+            <section className="py-10 border-b border-border">
+              <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-4">
+                Verified experience by area
+              </h2>
+              <VerifiedExperienceByArea
+                data={profile.evidenceByArea}
+                localEvidence={profile.localEvidence}
+              />
             </section>
           )}
 
