@@ -60,11 +60,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ProfilePage({ params }: PageProps) {
   const { slug } = await params
-  const profile = await getProfileBySlug(slug)
+  // Both reads start together: the records query does not depend on the profile.
+  const [profile, records] = await Promise.all([getProfileBySlug(slug), getRecordsForProfile(slug)])
 
   if (!profile) notFound()
 
-  const records = await getRecordsForProfile(slug)
   const displayDate = profile.dateRange.split("–")[1]?.trim() || profile.dateRange
 
   return (

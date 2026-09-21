@@ -1,5 +1,7 @@
 // lib/airtable.ts
 
+import { cache } from "react"
+
 /**
  * AIRTABLE CONFIGURATION
  */
@@ -10,6 +12,13 @@ const RECORDS_TABLE = process.env.AIRTABLE_PUBLIC_RECORDS_TABLE || "Public Recor
 const DIMENSION_SCORES_TABLE = "Record Dimension Scores"
 
 const BASE_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}`
+
+/**
+ * How long a table read stays in the Next data cache. The /api/revalidate webhook
+ * busts the "airtable" tag on record changes, so this is only the ceiling for how
+ * stale the site can get if that webhook never fires.
+ */
+const AIRTABLE_REVALIDATE_SECONDS = 300
 
 /**
  * TYPE DEFINITIONS
@@ -253,13 +262,22 @@ export interface ExperienceRecord {
 /**
  * HELPER FUNCTIONS
  */
-async function fetchAirtable<T>(table: string, params: Record<string, string> = {}): Promise<AirtableRecord<T>[]> {
+/**
+ * Reads a whole table (following Airtable's pagination) once per request.
+ *
+ * Wrapped in React's `cache` so that two callers asking for the same table in the
+ * same render share one result instead of each paging through it again. The params
+ * arrive pre-serialised because `cache` keys on argument identity, and a fresh
+ * object literal would never match.
+ */
+const fetchAirtableCached = cache(async (table: string, paramsKey: string): Promise<AirtableRecord<any>[]> => {
+  const params: Record<string, string> = JSON.parse(paramsKey)
   if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
     console.warn("[Airtable] API Keys missing")
     return []
   }
 
-  const allRecords: AirtableRecord<T>[] = []
+  const allRecords: AirtableRecord<any>[] = []
   let offset: string | undefined
 
   do {
@@ -272,7 +290,7 @@ async function fetchAirtable<T>(table: string, params: Record<string, string> = 
         Authorization: `Bearer ${AIRTABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
-      next: { revalidate: 0, tags: ["airtable", `table-${table}`] },
+      next: { revalidate: AIRTABLE_REVALIDATE_SECONDS, tags: ["airtable", `table-${table}`] },
     })
 
     if (!response.ok) {
@@ -281,7 +299,7 @@ async function fetchAirtable<T>(table: string, params: Record<string, string> = 
       return allRecords
     }
 
-    const data: AirtableResponse<T> = await response.json()
+    const data: AirtableResponse<any> = await response.json()
     allRecords.push(...(data.records || []))
     offset = data.offset
 
@@ -289,6 +307,12 @@ async function fetchAirtable<T>(table: string, params: Record<string, string> = 
   } while (offset)
 
   return allRecords
+})
+
+async function fetchAirtable<T>(table: string, params: Record<string, string> = {}): Promise<AirtableRecord<T>[]> {
+  // Sorted so that the same params in a different order still hit the same cache entry.
+  const paramsKey = JSON.stringify(Object.fromEntries(Object.entries(params).sort(([a], [b]) => a.localeCompare(b))))
+  return (await fetchAirtableCached(table, paramsKey)) as AirtableRecord<T>[]
 }
 
 function formatDateRange(start: string, end: string): string {

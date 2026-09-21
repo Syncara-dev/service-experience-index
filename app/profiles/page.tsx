@@ -26,8 +26,7 @@ export const metadata: Metadata = {
 }
 
 export default async function ProfilesPage() {
-  const profiles = await getAllProfiles()
-  const categories = await getAllCategories()
+  const [profiles, categories] = await Promise.all([getAllProfiles(), getAllCategories()])
 
   return (
     <div className="min-h-screen flex flex-col">
