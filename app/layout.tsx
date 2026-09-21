@@ -2,7 +2,6 @@ import type React from "react"
 import type { Metadata } from "next"
 import Script from "next/script"
 import { Inter, Newsreader } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 
 const GTM_ID = "GTM-NBKR8P47"
@@ -66,7 +65,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           />
         </noscript>
         {children}
-        <Analytics />
       </body>
     </html>
   )
