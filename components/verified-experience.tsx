@@ -93,7 +93,8 @@ function ProductTypeRow({ row }: { row: EvidenceProductType }) {
         unit={plural(row.verifiedProjects, "verified project", "verified projects")}
       />
       <p className="text-sm text-foreground">
-        {row.unitsInstalled} {plural(row.unitsInstalled, "unit installed", "units installed")}
+        {row.unitsInstalled}{" "}
+        {plural(row.unitsInstalled, row.displayUnitSingular, row.displayUnitPlural)} installed
       </p>
       <ScoreLine averageScore={row.averageScore} evidenceStatus={row.evidenceStatus} />
     </EvidenceCell>
@@ -205,7 +206,12 @@ export function VerifiedExperienceByArea({
             {localEvidence.labelSingular}{" "}
             {plural(localEvidence.verifiedProjects, "project", "projects")} ·{" "}
             {localEvidence.unitsInstalled}{" "}
-            {plural(localEvidence.unitsInstalled, "unit installed", "units installed")}
+            {plural(
+              localEvidence.unitsInstalled,
+              localEvidence.displayUnitSingular,
+              localEvidence.displayUnitPlural,
+            )}{" "}
+            installed
           </p>
         </div>
       )}

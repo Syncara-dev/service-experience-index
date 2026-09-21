@@ -167,6 +167,9 @@ export interface EvidenceProductType {
   labelSingular: string
   verifiedProjects: number
   unitsInstalled: number
+  /** Wording for the units line, e.g. "sash window" / "sash windows". */
+  displayUnitSingular: string
+  displayUnitPlural: string
   averageScore: number | null
   evidenceStatus: string
 }
@@ -202,6 +205,8 @@ export interface LocalEvidence {
   labelSingular: string
   verifiedProjects: number
   unitsInstalled: number
+  displayUnitSingular: string
+  displayUnitPlural: string
 }
 
 export interface ProfileSummary {
@@ -361,6 +366,18 @@ function parseEvidenceJson(raw?: string): any | undefined {
   }
 }
 
+/**
+ * Backend wording for the units line ("sash window" / "sash windows"). Returns empty
+ * strings when a key is missing so callers can pick their own fallback.
+ */
+function displayUnits(source: any): { displayUnitSingular: string; displayUnitPlural: string } {
+  const read = (value: unknown) => (typeof value === "string" ? value.trim() : "")
+  return {
+    displayUnitSingular: read(source?.display_unit_singular),
+    displayUnitPlural: read(source?.display_unit_plural),
+  }
+}
+
 function toScore(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null
 }
@@ -376,6 +393,8 @@ function parseEvidenceByProductType(raw?: string): EvidenceByProductType | undef
       labelSingular: String(p.label_singular ?? p.label),
       verifiedProjects: Number(p.verified_projects ?? 0),
       unitsInstalled: Number(p.units_installed ?? 0),
+      displayUnitSingular: displayUnits(p).displayUnitSingular || "unit",
+      displayUnitPlural: displayUnits(p).displayUnitPlural || "units",
       averageScore: toScore(p.average_score),
       evidenceStatus: String(p.evidence_status ?? "building"),
     }))
@@ -434,11 +453,15 @@ function parseLocalEvidence(
   if (!segment || typeof segment.area !== "string" || typeof segment.label !== "string") return undefined
   const match = productTypes?.productTypes.find((p) => p.key === String(segment.key))
   const singular = match?.labelSingular ?? String(segment.label).replace(/s$/, "")
+  const units = displayUnits(segment)
   return {
     area: String(segment.area),
     labelSingular: singular.toLowerCase(),
     verifiedProjects: Number(segment.verified_projects ?? 0),
     unitsInstalled: Number(segment.units_installed ?? 0),
+    // Segments carry their own wording; fall back to the product-type row, then "unit(s)".
+    displayUnitSingular: units.displayUnitSingular || match?.displayUnitSingular || "unit",
+    displayUnitPlural: units.displayUnitPlural || match?.displayUnitPlural || "units",
   }
 }
 
