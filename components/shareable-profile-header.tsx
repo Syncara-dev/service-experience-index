@@ -1,10 +1,11 @@
 import { ShareButton } from "./share-button"
 import { BusinessLogo } from "./business-logo"
-import { Globe } from "lucide-react"
+import { Globe, MapPin } from "lucide-react"
 
 interface ShareableProfileHeaderProps {
   businessName: string
   location: string
+  companyAddress?: string
   category: string
   overallScore: number
   sampleSize: number
@@ -17,6 +18,7 @@ interface ShareableProfileHeaderProps {
 export function ShareableProfileHeader({
   businessName,
   location,
+  companyAddress,
   category,
   overallScore,
   sampleSize,
@@ -51,6 +53,13 @@ export function ShareableProfileHeader({
                 <span className="w-1 h-1 rounded-full bg-border" />
                 <span>{category}</span>
               </div>
+
+              {companyAddress && (
+                <address className="flex items-start gap-1.5 text-sm text-muted-foreground mt-2 not-italic">
+                  <MapPin className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+                  <span>{companyAddress}</span>
+                </address>
+              )}
 
               {website && (
                 <div className="flex flex-wrap items-center gap-4 mt-3 text-sm">
