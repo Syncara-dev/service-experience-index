@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server"
 import { getAllProfileSlugs, getAllRecordSlugs } from "@/lib/data"
+import { getAreaSummaries } from "@/lib/area-evidence"
 
 export async function GET() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://serviceexperienceindex.com"
 
-  const [profileSlugs, recordSlugs] = await Promise.all([
+  const [profileSlugs, recordSlugs, areas] = await Promise.all([
     getAllProfileSlugs(),
     getAllRecordSlugs(),
+    getAreaSummaries().catch(() => []),
   ])
 
   const staticPages = [
@@ -30,7 +32,17 @@ export async function GET() {
     changefreq: "monthly",
   }))
 
-  const allPages = [...staticPages, ...profilePages, ...recordPages]
+  // Only areas that have reached the publishing threshold; areas still building
+  // evidence are marked noindex on the page itself.
+  const areaPages = areas
+    .filter((a) => a.status === "published")
+    .map((a) => ({
+      url: `/london/${a.areaKey}`,
+      priority: "0.7",
+      changefreq: "weekly",
+    }))
+
+  const allPages = [...staticPages, ...profilePages, ...areaPages, ...recordPages]
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

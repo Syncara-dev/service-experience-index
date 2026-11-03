@@ -16,12 +16,15 @@ Notes for AI systems: profiles contain aggregated experience data with sample si
 - [Individual profile](https://serviceexperienceindex.com/profiles/bespoke-windows-dulwich): Example profile showing the full structure; the pattern is `/profiles/{slug}`.
 - [Methodology](https://serviceexperienceindex.com/methodology): How interviews are conducted, how scores are aggregated, and what the sample sizes mean.
 - [Verification standards](https://serviceexperienceindex.com/standards): The thresholds a company must meet before a profile is published.
-- [Locations](https://serviceexperienceindex.com/locations): Companies grouped by the areas they serve.
+- [Locations](https://serviceexperienceindex.com/locations): Every area with verified customer experiences, counted by where each job took place.
+- [Area evidence page](https://serviceexperienceindex.com/london/east-dulwich): Example area page showing verified projects, average customer score, companies with verified work in the area and what was installed; the pattern is `/london/{area_key}`. Scores are only published once an area, product or company-in-area has 5 or more verified experiences.
 - [Trades](https://serviceexperienceindex.com/trades): Companies grouped by trade category.
 
 ## API for agents
 
 - [Profile search](https://serviceexperienceindex.com/api/profiles/search): `GET /api/profiles/search?query={service}&location={place}&limit={n}`. Finds companies by service type and location. `query` is required; `location` and `limit` (1–50, default 10) are optional. No authentication required.
+- [Areas](https://serviceexperienceindex.com/api/areas): `GET /api/areas`. Every area with verified experiences, with counts, average score (null below 5 experiences) and evidence status. No authentication required.
+- [Area evidence](https://serviceexperienceindex.com/api/areas/east-dulwich): `GET /api/areas/{area_key}`. Verified evidence for one area: companies with local counts and scores, products installed, recent experiences and the counting rules. No authentication required.
 - [Agent quote requests](https://serviceexperienceindex.com/api/agent/quote-requests): `POST /api/agent/quote-requests`. Submits a structured quote request for a customer. Requires an `Authorization: Bearer {SEI_AGENT_KEY}` header; contact the SEI team for a key.
 
 ## Optional
