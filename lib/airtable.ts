@@ -10,6 +10,8 @@ const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID
 const PROFILES_TABLE = process.env.AIRTABLE_PUBLIC_PROFILES_TABLE || "Public Profiles"
 const RECORDS_TABLE = process.env.AIRTABLE_PUBLIC_RECORDS_TABLE || "Public Records"
 const DIMENSION_SCORES_TABLE = "Record Dimension Scores"
+const PROJECT_ITEMS_TABLE = "Project Items"
+const PRODUCT_TYPES_TABLE = "Product Types"
 
 const BASE_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}`
 
@@ -243,6 +245,8 @@ export interface ProfileSummary {
 export interface ExperienceRecord {
   slug?: string
   projectDetails?: string
+  /** What was installed, built from Project Items, e.g. "4 sash windows + 1 tilt and turn window". */
+  installedItems?: string
   jobType?: string
   recordIdPublic?: string
   customerLabel: string
@@ -620,6 +624,61 @@ function transformRecord(
   }
 }
 
+interface ProjectItemFields {
+  "Verified Experience"?: string[]
+  "Product Type"?: string[]
+  quantity?: number
+}
+
+interface ProductTypeFields {
+  label_singular?: string
+  label_plural?: string
+  display_unit_singular?: string
+  display_unit_plural?: string
+  sort_order?: number
+}
+
+/**
+ * Maps each Public Record's Airtable id to a short "what was installed" line,
+ * e.g. "4 sash windows + 1 tilt and turn window", built from Project Items and
+ * the unit names in Product Types. Material is deliberately left out: most
+ * historic items carry provisional material values that have not been verified.
+ * Any failure returns an empty map, so cards fall back to how they looked before.
+ */
+async function getInstalledItemsByRecord(): Promise<Map<string, string>> {
+  try {
+    const [items, types] = await Promise.all([
+      fetchAirtable<ProjectItemFields>(PROJECT_ITEMS_TABLE),
+      fetchAirtable<ProductTypeFields>(PRODUCT_TYPES_TABLE),
+    ])
+    const typesById = new Map(types.map((t) => [t.id, t.fields]))
+
+    const linesByRecord = new Map<string, { qty: number; sort: number; text: string }[]>()
+    for (const item of items) {
+      const recordId = item.fields["Verified Experience"]?.[0]
+      const type = typesById.get(item.fields["Product Type"]?.[0] ?? "")
+      const qty = item.fields.quantity
+      if (!recordId || !type || !qty || qty < 1) continue
+      const singular = type.display_unit_singular || type.label_singular?.toLowerCase()
+      const plural = type.display_unit_plural || type.label_plural?.toLowerCase() || singular
+      const unit = qty === 1 ? singular : plural
+      if (!unit) continue
+      if (!linesByRecord.has(recordId)) linesByRecord.set(recordId, [])
+      linesByRecord.get(recordId)!.push({ qty, sort: type.sort_order ?? 999, text: `${qty} ${unit}` })
+    }
+
+    const result = new Map<string, string>()
+    for (const [recordId, lines] of linesByRecord) {
+      lines.sort((a, b) => b.qty - a.qty || a.sort - b.sort)
+      result.set(recordId, lines.map((l) => l.text).join(" + "))
+    }
+    return result
+  } catch (error) {
+    console.error("[Airtable] Could not build installed items:", error)
+    return new Map()
+  }
+}
+
 /**
  * PUBLIC API FUNCTIONS
  */
@@ -689,9 +748,10 @@ export async function getRecordsForProfile(profileSlug: string): Promise<Experie
 
   const profileRecordId = profileRecords[0].id
 
-  const [allRecords, allDimensionScores] = await Promise.all([
+  const [allRecords, allDimensionScores, installedItems] = await Promise.all([
     fetchAirtable<PublicRecordFields>(RECORDS_TABLE),
     fetchAirtable<DimensionScoreFields>(DIMENSION_SCORES_TABLE),
+    getInstalledItemsByRecord(),
   ])
 
   const records = allRecords.filter((r) => r.fields.profile?.includes(profileRecordId))
@@ -707,7 +767,7 @@ export async function getRecordsForProfile(profileSlug: string): Promise<Experie
   }
 
   return records
-    .map((r) => transformRecord(r, scoreMap.get(r.id) ?? {}))
+    .map((r) => ({ ...transformRecord(r, scoreMap.get(r.id) ?? {}), installedItems: installedItems.get(r.id) }))
     .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
 }
 
@@ -723,7 +783,7 @@ export async function getRecordBySlug(
   const record = records[0]
   const profileAirtableId = record.fields.profile?.[0]
 
-  const [allDimensionScores, profileRecords] = await Promise.all([
+  const [allDimensionScores, profileRecords, installedItems] = await Promise.all([
     fetchAirtable<DimensionScoreFields>(DIMENSION_SCORES_TABLE),
     profileAirtableId
       ? fetchAirtable<PublicProfileFields>(PROFILES_TABLE, {
@@ -731,6 +791,7 @@ export async function getRecordBySlug(
           maxRecords: "1",
         })
       : Promise.resolve([]),
+    getInstalledItemsByRecord(),
   ])
 
   const scoreMap: Record<string, number> = {}
@@ -743,6 +804,7 @@ export async function getRecordBySlug(
   const profile = profileRecords[0]
   return {
     ...transformRecord(record, scoreMap),
+    installedItems: installedItems.get(record.id),
     profileSlug: profile?.fields.slug || "",
     profileName: profile?.fields.name || "",
     profileLogoUrl: profile?.fields["Company Logo"]?.[0]?.url ?? profile?.fields.logo_url,

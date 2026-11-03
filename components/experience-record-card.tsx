@@ -7,6 +7,7 @@ interface ExperienceRecordProps {
   headline: string
   projectType?: string
   projectDetails?: string
+  installedItems?: string
   overallScore: number
   summaryPublic: string
   sentiment: "positive" | "mixed" | "negative"
@@ -73,6 +74,7 @@ export function ExperienceRecordCard({
   headline,
   projectType,
   projectDetails,
+  installedItems,
   overallScore,
   summaryPublic,
   sentiment,
@@ -114,12 +116,15 @@ export function ExperienceRecordCard({
         </div>
 
         {/* Project Details */}
-        {projectDetails && (
+        {(projectDetails || installedItems) && (
           <div className="mb-4">
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">
               Project Details
             </p>
-            <p className="text-sm text-foreground">{projectDetails}</p>
+            {projectDetails && <p className="text-sm text-foreground">{projectDetails}</p>}
+            {installedItems && (
+              <p className="text-sm text-muted-foreground mt-0.5">Installed: {installedItems}</p>
+            )}
           </div>
         )}
 
