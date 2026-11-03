@@ -109,9 +109,31 @@ export function tradeCopy(category: string): TradeCopy {
 export interface AreaProduct {
   key: string
   label: string
+  /** "sash window" / "sash windows", for sentences */
+  unitSingular: string
+  unitPlural: string
   verifiedProjects: number
   unitsInstalled: number
   averageScore: number | null
+}
+
+/**
+ * One plain-English sentence naming what was installed most in an area, for page
+ * descriptions and intros, e.g. "Mostly sash windows: 15 verified projects and 50 sash
+ * windows installed, plus casement windows (4 projects)." Undefined when there are no products.
+ */
+export function productSentence(products: AreaProduct[]): string | undefined {
+  const [top, ...rest] = products
+  if (!top) return undefined
+  const lead =
+    `${products.length > 1 ? "Mostly " : ""}${top.label.toLowerCase()}: ${top.verifiedProjects} verified ` +
+    `${top.verifiedProjects === 1 ? "project" : "projects"} and ${top.unitsInstalled} ` +
+    `${top.unitsInstalled === 1 ? top.unitSingular : top.unitPlural} installed`
+  const others = rest
+    .slice(0, 2)
+    .map((p) => `${p.label.toLowerCase()} (${p.verifiedProjects} ${p.verifiedProjects === 1 ? "project" : "projects"})`)
+  const sentence = others.length ? `${lead}, plus ${others.join(" and ")}` : lead
+  return sentence.charAt(0).toUpperCase() + sentence.slice(1) + "."
 }
 
 export interface AreaCompany {
@@ -367,10 +389,21 @@ export async function getAreaEvidence(areaKey: string): Promise<AreaEvidence | n
       .sort((a, b) => b.verifiedExperiences - a.verifiedExperiences || a.name.localeCompare(b.name))
 
     // Products
-    const productMap = new Map<string, { label: string; projects: Set<string>; units: number; scores: number[]; sort: number }>()
+    const productMap = new Map<
+      string,
+      { label: string; unitSingular: string; unitPlural: string; projects: Set<string>; units: number; scores: number[]; sort: number }
+    >()
     for (const r of tradeRecs) {
       for (const line of data.itemsByRecord.get(r.id) || []) {
-        const p = productMap.get(line.key) || { label: line.label, projects: new Set<string>(), units: 0, scores: [], sort: line.sort }
+        const p = productMap.get(line.key) || {
+          label: line.label,
+          unitSingular: line.unitSingular,
+          unitPlural: line.unitPlural,
+          projects: new Set<string>(),
+          units: 0,
+          scores: [],
+          sort: line.sort,
+        }
         if (!p.projects.has(r.id)) {
           p.projects.add(r.id)
           p.scores.push(r.score)
@@ -383,6 +416,8 @@ export async function getAreaEvidence(areaKey: string): Promise<AreaEvidence | n
       .map(([key, p]) => ({
         key,
         label: p.label,
+        unitSingular: p.unitSingular,
+        unitPlural: p.unitPlural,
         verifiedProjects: p.projects.size,
         unitsInstalled: p.units,
         averageScore: average(p.scores),
