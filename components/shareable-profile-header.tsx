@@ -57,7 +57,7 @@ export function ShareableProfileHeader({
               </div>
 
               {companyAddress && (
-                <address className="flex items-start gap-1.5 text-sm text-muted-foreground mt-2 not-italic">
+                <address className="flex items-start gap-1.5 text-sm text-muted-foreground mt-3 not-italic">
                   <MapPin className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
                   <span>{companyAddress}</span>
                 </address>
