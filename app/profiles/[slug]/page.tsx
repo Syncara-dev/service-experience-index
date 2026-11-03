@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://serviceexperienceindex.com"
   const profileUrl = `${baseUrl}/profiles/${slug}`
   const title = `${profile.businessName} Verified Reviews & Experience Score | Service Experience Index`
-  const description = `${profile.businessName} has an SEI score of ${profile.overallScore}/10 based on ${profile.sampleSize} verified customer interviews. Independent, structured experience data — not self-submitted reviews.`
+  const description = `${profile.businessName} has an SEI score of ${profile.overallScore}/10 based on ${profile.sampleSize} verified customer interviews. Every customer is asked the same questions, so the results reflect typical experiences, not just the happiest or unhappiest.`
 
   return {
     title,
