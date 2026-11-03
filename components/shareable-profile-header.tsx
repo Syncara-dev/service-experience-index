@@ -39,29 +39,6 @@ export function ShareableProfileHeader({
               Verified Experience Profile
             </span>
             <span className="text-xs text-muted-foreground">Verified from recorded customer conversations</span>
-            {fensa &&
-              (fensa.verificationUrl ? (
-                <a
-                  href={fensa.verificationUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border border-border rounded text-foreground hover:bg-muted transition-colors"
-                  aria-label={`FENSA registered${fensa.registrationNumber ? `, number ${fensa.registrationNumber}` : ""}. Verify on the FENSA website (opens in a new tab)`}
-                >
-                  <BadgeCheck className="w-3.5 h-3.5" aria-hidden="true" />
-                  <span>
-                    FENSA registered{fensa.registrationNumber ? ` · No. ${fensa.registrationNumber}` : ""}
-                  </span>
-                  <ExternalLink className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
-                </a>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border border-border rounded text-foreground">
-                  <BadgeCheck className="w-3.5 h-3.5" aria-hidden="true" />
-                  <span>
-                    FENSA registered{fensa.registrationNumber ? ` · No. ${fensa.registrationNumber}` : ""}
-                  </span>
-                </span>
-              ))}
           </div>
 
           <div className="flex items-start gap-5 mb-4">
@@ -97,6 +74,33 @@ export function ShareableProfileHeader({
                     <Globe className="w-4 h-4" />
                     <span>{website.replace(/^https?:\/\//, "")}</span>
                   </a>
+                </div>
+              )}
+
+              {fensa && (
+                <div className="mt-3">
+                  {fensa.verificationUrl ? (
+                    <a
+                      href={fensa.verificationUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border border-border rounded text-foreground hover:bg-muted transition-colors"
+                      aria-label={`FENSA registered${fensa.registrationNumber ? `, number ${fensa.registrationNumber}` : ""}. Verify on the FENSA website (opens in a new tab)`}
+                    >
+                      <BadgeCheck className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>
+                        FENSA registered{fensa.registrationNumber ? ` · No. ${fensa.registrationNumber}` : ""}
+                      </span>
+                      <ExternalLink className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
+                    </a>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border border-border rounded text-foreground">
+                      <BadgeCheck className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>
+                        FENSA registered{fensa.registrationNumber ? ` · No. ${fensa.registrationNumber}` : ""}
+                      </span>
+                    </span>
+                  )}
                 </div>
               )}
             </div>
