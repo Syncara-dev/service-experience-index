@@ -1,11 +1,12 @@
 import { ShareButton } from "./share-button"
 import { BusinessLogo } from "./business-logo"
-import { Globe, MapPin } from "lucide-react"
+import { BadgeCheck, ExternalLink, Globe, MapPin } from "lucide-react"
 
 interface ShareableProfileHeaderProps {
   businessName: string
   location: string
   companyAddress?: string
+  fensa?: { registrationNumber?: string; verificationUrl?: string }
   category: string
   overallScore: number
   sampleSize: number
@@ -19,6 +20,7 @@ export function ShareableProfileHeader({
   businessName,
   location,
   companyAddress,
+  fensa,
   category,
   overallScore,
   sampleSize,
@@ -55,7 +57,7 @@ export function ShareableProfileHeader({
               </div>
 
               {companyAddress && (
-                <address className="flex items-start gap-1.5 text-sm text-muted-foreground mt-2 not-italic">
+                <address className="flex items-start gap-1.5 text-sm text-muted-foreground mt-3 not-italic">
                   <MapPin className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
                   <span>{companyAddress}</span>
                 </address>
@@ -72,6 +74,30 @@ export function ShareableProfileHeader({
                     <Globe className="w-4 h-4" />
                     <span>{website.replace(/^https?:\/\//, "")}</span>
                   </a>
+                </div>
+              )}
+
+              {fensa && (
+                <div className="flex items-center gap-1.5 mt-3 text-sm text-muted-foreground">
+                  <BadgeCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  {fensa.verificationUrl ? (
+                    <a
+                      href={fensa.verificationUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+                      aria-label={`FENSA registered${fensa.registrationNumber ? `, number ${fensa.registrationNumber}` : ""}. Verify on the FENSA website (opens in a new tab)`}
+                    >
+                      <span>
+                        FENSA registered{fensa.registrationNumber ? ` · No. ${fensa.registrationNumber}` : ""}
+                      </span>
+                      <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                    </a>
+                  ) : (
+                    <span>
+                      FENSA registered{fensa.registrationNumber ? ` · No. ${fensa.registrationNumber}` : ""}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
