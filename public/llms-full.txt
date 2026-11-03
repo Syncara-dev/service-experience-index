@@ -156,3 +156,33 @@ Rate limits:
 - 10 requests per hour per company_id
 
 Error codes: UNAUTHORIZED, VALIDATION_ERROR, NOT_FOUND, RATE_LIMITED, WRITE_FAILED, INTERNAL_ERROR
+
+## Area Evidence Endpoints
+
+Verified evidence grouped by where each job took place (the area linked to each verified experience), not by where a company says it works. The same figures appear on the area pages at /london/{area_key}.
+
+Threshold: a score (for an area, a company within an area, or a product within an area) is only published once there are 5 or more verified experiences behind it. Below that the score is null and evidence_status is "building".
+
+### List areas
+
+GET /api/areas
+
+Returns every area with at least one verified experience, most evidence first. Each item has: area, area_key, region, postcode_districts, verified_experiences, average_score (null below 5), evidence_status ("published" or "building"), page_url, data_url.
+
+### Area evidence
+
+GET /api/areas/{area_key}
+
+Example request:
+  GET /api/areas/east-dulwich
+
+Returns: area, area_key, region, postcode_districts, page_url, evidence_status, verified_experiences, average_score, units_installed, window_start, window_end, and:
+- trades[]: trade, verified_experiences, units_installed,
+  companies[] (name, profile_url, verified_experiences_in_area, average_score_in_area, fensa_registered),
+  products[] (product, key, verified_projects, units_installed, average_score)
+- recent_experiences[]: date, score, installed (e.g. "3 sash windows + 1 tilt and turn window"), customer_quote, company, record_url
+- methodology: source, threshold, threshold_rule, counting_rule, scale, url
+
+Counting rules: a verified experience counts once in its area. A product's verified projects are distinct experiences containing that product; units are the sum of installed quantities. Customer names and full addresses are never published; only the outward postcode district (e.g. SE22).
+
+No authentication required. Responses are cached for up to one hour.

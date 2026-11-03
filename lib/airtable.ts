@@ -7,11 +7,11 @@ import { cache } from "react"
  */
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID
-const PROFILES_TABLE = process.env.AIRTABLE_PUBLIC_PROFILES_TABLE || "Public Profiles"
-const RECORDS_TABLE = process.env.AIRTABLE_PUBLIC_RECORDS_TABLE || "Public Records"
+export const PROFILES_TABLE = process.env.AIRTABLE_PUBLIC_PROFILES_TABLE || "Public Profiles"
+export const RECORDS_TABLE = process.env.AIRTABLE_PUBLIC_RECORDS_TABLE || "Public Records"
 const DIMENSION_SCORES_TABLE = "Record Dimension Scores"
-const PROJECT_ITEMS_TABLE = "Project Items"
-const PRODUCT_TYPES_TABLE = "Product Types"
+export const PROJECT_ITEMS_TABLE = "Project Items"
+export const PRODUCT_TYPES_TABLE = "Product Types"
 
 const BASE_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}`
 
@@ -25,7 +25,7 @@ const AIRTABLE_REVALIDATE_SECONDS = 300
 /**
  * TYPE DEFINITIONS
  */
-interface AirtableRecord<T> {
+export interface AirtableRecord<T> {
   id: string
   fields: T
   createdTime: string
@@ -319,7 +319,7 @@ const fetchAirtableCached = cache(async (table: string, paramsKey: string): Prom
   return allRecords
 })
 
-async function fetchAirtable<T>(table: string, params: Record<string, string> = {}): Promise<AirtableRecord<T>[]> {
+export async function fetchAirtable<T>(table: string, params: Record<string, string> = {}): Promise<AirtableRecord<T>[]> {
   // Sorted so that the same params in a different order still hit the same cache entry.
   const paramsKey = JSON.stringify(Object.fromEntries(Object.entries(params).sort(([a], [b]) => a.localeCompare(b))))
   return (await fetchAirtableCached(table, paramsKey)) as AirtableRecord<T>[]
@@ -624,13 +624,13 @@ function transformRecord(
   }
 }
 
-interface ProjectItemFields {
+export interface ProjectItemFields {
   "Verified Experience"?: string[]
   "Product Type"?: string[]
   quantity?: number
 }
 
-interface ProductTypeFields {
+export interface ProductTypeFields {
   label_singular?: string
   label_plural?: string
   display_unit_singular?: string
