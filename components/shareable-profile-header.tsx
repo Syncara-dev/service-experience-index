@@ -1,11 +1,12 @@
 import { ShareButton } from "./share-button"
 import { BusinessLogo } from "./business-logo"
-import { Globe, MapPin } from "lucide-react"
+import { BadgeCheck, ExternalLink, Globe, MapPin } from "lucide-react"
 
 interface ShareableProfileHeaderProps {
   businessName: string
   location: string
   companyAddress?: string
+  fensa?: { registrationNumber?: string; verificationUrl?: string }
   category: string
   overallScore: number
   sampleSize: number
@@ -19,6 +20,7 @@ export function ShareableProfileHeader({
   businessName,
   location,
   companyAddress,
+  fensa,
   category,
   overallScore,
   sampleSize,
@@ -37,6 +39,29 @@ export function ShareableProfileHeader({
               Verified Experience Profile
             </span>
             <span className="text-xs text-muted-foreground">Verified from recorded customer conversations</span>
+            {fensa &&
+              (fensa.verificationUrl ? (
+                <a
+                  href={fensa.verificationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border border-border rounded text-foreground hover:bg-muted transition-colors"
+                  aria-label={`FENSA registered${fensa.registrationNumber ? `, number ${fensa.registrationNumber}` : ""}. Verify on the FENSA website (opens in a new tab)`}
+                >
+                  <BadgeCheck className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>
+                    FENSA registered{fensa.registrationNumber ? ` · No. ${fensa.registrationNumber}` : ""}
+                  </span>
+                  <ExternalLink className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
+                </a>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border border-border rounded text-foreground">
+                  <BadgeCheck className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>
+                    FENSA registered{fensa.registrationNumber ? ` · No. ${fensa.registrationNumber}` : ""}
+                  </span>
+                </span>
+              ))}
           </div>
 
           <div className="flex items-start gap-5 mb-4">

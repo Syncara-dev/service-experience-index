@@ -43,6 +43,9 @@ interface PublicProfileFields {
   framework_type?: string    
   based_in?: string
   "Company Address"?: string
+  "FENSA Registered"?: boolean
+  "FENSA Registration Number"?: string
+  "FENSA Verification URL"?: string
   areas_covered?: string | string[]
   website_url?: string
   last_updated_at?: string
@@ -118,6 +121,7 @@ export interface Profile {
   businessName: string
   location: string
   companyAddress?: string
+  fensa?: { registrationNumber?: string; verificationUrl?: string }
   category: string
   tags: string[]
   overallScore: number
@@ -514,6 +518,12 @@ function transformProfile(record: AirtableRecord<PublicProfileFields>): Profile 
     profile_intro_public: f.profile_intro_public,
     location: f.based_in || "",
     companyAddress: f["Company Address"]?.trim() || undefined,
+    fensa: f["FENSA Registered"]
+      ? {
+          registrationNumber: f["FENSA Registration Number"]?.trim() || undefined,
+          verificationUrl: normalizeUrl(f["FENSA Verification URL"]),
+        }
+      : undefined,
     category: f.category,
     tags: parseTags(f.Tags),
     overallScore: f.overall_score_avg || 0,
