@@ -78,27 +78,24 @@ export function ShareableProfileHeader({
               )}
 
               {fensa && (
-                <div className="mt-3">
+                <div className="flex items-center gap-1.5 mt-3 text-sm text-muted-foreground">
+                  <BadgeCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
                   {fensa.verificationUrl ? (
                     <a
                       href={fensa.verificationUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border border-border rounded text-foreground hover:bg-muted transition-colors"
+                      className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
                       aria-label={`FENSA registered${fensa.registrationNumber ? `, number ${fensa.registrationNumber}` : ""}. Verify on the FENSA website (opens in a new tab)`}
                     >
-                      <BadgeCheck className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>
                         FENSA registered{fensa.registrationNumber ? ` · No. ${fensa.registrationNumber}` : ""}
                       </span>
-                      <ExternalLink className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
+                      <ExternalLink className="w-3 h-3" aria-hidden="true" />
                     </a>
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium border border-border rounded text-foreground">
-                      <BadgeCheck className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>
-                        FENSA registered{fensa.registrationNumber ? ` · No. ${fensa.registrationNumber}` : ""}
-                      </span>
+                    <span>
+                      FENSA registered{fensa.registrationNumber ? ` · No. ${fensa.registrationNumber}` : ""}
                     </span>
                   )}
                 </div>
