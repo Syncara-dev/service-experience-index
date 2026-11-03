@@ -1,4 +1,4 @@
-import { EVIDENCE_THRESHOLD, type AreaEvidence } from "@/lib/area-evidence"
+import { EVIDENCE_THRESHOLD, productSentence, type AreaEvidence } from "@/lib/area-evidence"
 
 interface AreaJsonLdProps {
   area: AreaEvidence
@@ -33,7 +33,10 @@ export function AreaJsonLd({ area, baseUrl }: AreaJsonLdProps) {
     "@id": pageUrl,
     url: pageUrl,
     name: `Verified ${area.trades[0]?.copy.installations ?? "work"} in ${area.label}`,
-    description: `${area.verifiedExperiences} verified customer experiences in ${area.label}, collected through structured post-completion interviews.`,
+    description: [
+      `${area.verifiedExperiences} verified customer experiences in ${area.label}, collected through structured post-completion interviews.`,
+      ...area.trades.map((t) => productSentence(t.products)).filter(Boolean),
+    ].join(" "),
     inLanguage: "en-GB",
     about: place,
     ...(area.latestDate ? { dateModified: area.latestDate } : {}),

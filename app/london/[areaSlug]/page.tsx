@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site-header"
 import { SiteFooter } from "@/components/site-footer"
 import { BusinessLogo } from "@/components/business-logo"
 import { AreaJsonLd } from "@/components/area-json-ld"
-import { EVIDENCE_THRESHOLD, getAreaEvidence, normaliseAreaSlug } from "@/lib/area-evidence"
+import { EVIDENCE_THRESHOLD, getAreaEvidence, normaliseAreaSlug, productSentence } from "@/lib/area-evidence"
 
 export const revalidate = 3600
 
@@ -35,9 +35,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const headline = headlineFor(area)
   const districts = area.postcodeDistricts.length ? ` (${area.postcodeDistricts.join(", ")})` : ""
   const scorePart = area.averageScore !== null ? `, average customer score ${area.averageScore}/10` : ""
+  const products = area.trades.length === 1 ? productSentence(area.trades[0].products) : undefined
   return {
     title: `${headline}${districts} | Service Experience Index`,
-    description: `${area.verifiedExperiences} verified customer experiences in ${area.label}${scorePart}. Collected through structured phone interviews after each job was completed, not self-submitted reviews.`,
+    description: `${area.verifiedExperiences} verified customer experiences in ${area.label}${scorePart}.${products ? ` ${products}` : ""} Collected through structured phone interviews after each job was completed. Every customer is asked the same questions, so the results reflect typical experiences, not just the happiest or unhappiest.`,
     alternates: { canonical: `/london/${area.areaKey}` },
     // Areas still building evidence are visible to visitors but kept out of search
     // results until they reach the publishing threshold.
@@ -96,8 +97,18 @@ export default async function AreaPage({ params }: PageProps) {
             <p className="text-muted-foreground leading-relaxed max-w-2xl">
               What {area.label} homeowners said after{" "}
               {area.trades.length === 1 ? area.trades[0].copy.afterPhrase : "the work was finished"}, from phone interviews SEI
-              carried out once each job was completed. These are not reviews customers chose to post.
+              carried out once each job was completed. Every customer is asked the same questions, so the results reflect
+              typical experiences, not just the happiest or unhappiest.
             </p>
+            {area.trades.map((t) => {
+              const sentence = productSentence(t.products)
+              return sentence ? (
+                <p key={t.category} className="mt-3 text-foreground leading-relaxed max-w-2xl">
+                  {area.trades.length > 1 ? `${t.copy.companies.replace(/ companies$/, "")}: ` : ""}
+                  {sentence}
+                </p>
+              ) : null
+            })}
             {building && (
               <p className="mt-4 text-sm text-muted-foreground border border-border rounded-md px-4 py-3 max-w-2xl">
                 Evidence is still building here. Scores are published once there are {EVIDENCE_THRESHOLD} or more verified
