@@ -41,7 +41,8 @@ interface PublicProfileFields {
   status?: string            
   category: string
   framework_type?: string    
-  based_in?: string          
+  based_in?: string
+  "Company Address"?: string
   areas_covered?: string | string[]
   website_url?: string
   last_updated_at?: string
@@ -116,6 +117,7 @@ export interface Profile {
   slug: string
   businessName: string
   location: string
+  companyAddress?: string
   category: string
   tags: string[]
   overallScore: number
@@ -511,6 +513,7 @@ function transformProfile(record: AirtableRecord<PublicProfileFields>): Profile 
     businessName: f.name,
     profile_intro_public: f.profile_intro_public,
     location: f.based_in || "",
+    companyAddress: f["Company Address"]?.trim() || undefined,
     category: f.category,
     tags: parseTags(f.Tags),
     overallScore: f.overall_score_avg || 0,
