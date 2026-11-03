@@ -84,6 +84,7 @@ export default async function RecordPage({ params }: PageProps) {
     { label: "Business", value: record.profileName },
     { label: "Location", value: postcode ? `${postcode}, London` : "London" },
     ...(record.jobType ? [{ label: "Job Type", value: record.jobType }] : []),
+    ...(record.installedItems ? [{ label: "Installed", value: record.installedItems }] : []),
     ...(record.date ? [{ label: "Date Completed", value: formatDate(record.date) }] : []),
     { label: "Verification", value: "Verified via post-installation call" },
     ...(record.recordIdPublic ? [{ label: "Record ID", value: record.recordIdPublic }] : []),
